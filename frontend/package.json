@@ -1,4 +1,5 @@
 {
+  "name": "frontend",
   "type": "module",
   "dependencies": {
     "@pmndrs/uikitml": "^0.0.10",

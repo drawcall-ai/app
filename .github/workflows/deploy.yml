@@ -1,0 +1,62 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+ # deploy-backend:
+ #   runs-on: ubuntu-22.04
+ #   permissions:
+ #     contents: read
+#
+ #   steps:
+ #     - name: Checkout code
+ #       uses: actions/checkout@v3
+#
+ #     - uses: superfly/flyctl-actions/setup-flyctl@master
+#
+ #     - name: Deploy backend
+ #       run: flyctl deploy --dockerfile backend/Dockerfile --config backend/fly.toml --local-only
+ #       env:
+ #         FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+  deploy-frontend:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+      pages: write # to deploy to Pages
+      id-token: write # to verify the deployment originates from an appropriate source
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      - uses: pnpm/action-setup@v2
+        name: Install pnpm
+        with:
+          version: 10
+          run_install: false
+
+      - name: build frontend
+        run: |
+          pnpm -F frontend... install
+          pnpm -F frontend... build
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'frontend/dist'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

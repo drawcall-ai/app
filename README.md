@@ -6,10 +6,10 @@
 
 Roadmap
 
-[ ] View/download/push-to-repo code (threejs and r3f for now)
-[ ] Account/Login
-[ ] Rating support
-[ ] Streaming
-[ ] Icons
-[ ] Use provided themes
-[ ] Kits
+[ ] View/download/push-to-repo code (threejs and r3f for now)  
+[ ] Account/Login  
+[ ] Rating support  
+[ ] Streaming  
+[ ] Icons  
+[ ] Use provided themes  
+[ ] Kits  
