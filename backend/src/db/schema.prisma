@@ -23,8 +23,14 @@ model Job {
 }
 
 model UikitJob {
-    id       Int    @id @default(autoincrement())
-    Job      Job?
-    streamId String
-    prompt   String
+    id        Int     @id @default(autoincrement())
+    Job       Job?
+    machineId String?
+    output    String?
+    error     String?
+    canceled  Boolean @default(false)
+    prompt    String
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 }

@@ -15,14 +15,17 @@
     "@dotenvx/dotenvx": "^1.39.0",
     "@fastify/cors": "^11.0.0",
     "@fastify/websocket": "^11.0.2",
-    "@trpc/server": "^10.45.0",
+    "@prisma/client": "6.11.0",
+    "@trpc/server": "^11.4.3",
     "fastify": "^5.2.1",
-    "redis": "^4.7.0",
+    "prisma": "^6.11.0",
+    "prisma-client": "^0.0.0",
     "ws": "^8.15.0",
     "zod": "^3.22.4"
   },
   "devDependencies": {
     "@types/ws": "^8.5.10",
-    "concurrently": "^9.1.2"
+    "concurrently": "^9.1.2",
+    "ts-node": "^10.9.2"
   }
 }

@@ -1,19 +1,23 @@
 {
   "type": "module",
   "dependencies": {
-    "@pmndrs/uikit": "^1.0.0",
+    "@pmndrs/uikitml": "^0.0.10",
+    "@pmndrs/msdfonts": "^0.8.21",
+    "@pmndrs/uikit": "^1.0.23",
     "@pmndrs/vanilla": "^1.21.0",
     "@preact/signals": "^2.2.1",
     "@react-three/drei": "^10.4.2",
     "@react-three/fiber": "^9.1.4",
     "@tanstack/react-query": "^5.81.5",
     "lucide-react": "^0.525.0",
+    "nuqs": "^2.4.3",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "three": "^0.178.0"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.11",
+    "@trpc/react-query": "^11.4.3",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@types/three": "^0.177.0",
