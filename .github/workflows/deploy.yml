@@ -6,21 +6,21 @@ on:
       - main
 
 jobs:
- # deploy-backend:
- #   runs-on: ubuntu-22.04
- #   permissions:
- #     contents: read
-#
- #   steps:
- #     - name: Checkout code
- #       uses: actions/checkout@v3
-#
- #     - uses: superfly/flyctl-actions/setup-flyctl@master
-#
- #     - name: Deploy backend
- #       run: flyctl deploy --dockerfile backend/Dockerfile --config backend/fly.toml --local-only
- #       env:
- #         FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+  deploy-backend:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Deploy backend
+        run: flyctl deploy --dockerfile backend/Dockerfile --config backend/fly.toml --local-only
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
 
   deploy-frontend:
     runs-on: ubuntu-22.04
@@ -55,7 +55,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: 'frontend/dist'
+          path: "frontend/dist"
 
       - name: Deploy to GitHub Pages
         id: deployment

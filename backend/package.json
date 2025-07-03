@@ -2,8 +2,7 @@
   "name": "backend",
   "type": "module",
   "files": [
-    "dist",
-    ".env.production"
+    "dist"
   ],
   "scripts": {
     "db:push": "dotenvx run -f .env -- prisma db push --schema ./src/db/schema.prisma",
