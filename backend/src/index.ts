@@ -6,7 +6,6 @@ import {
 } from "@trpc/server/adapters/fastify";
 import fastify from "fastify";
 import cors from "@fastify/cors";
-import ws from "@fastify/websocket";
 import { buildUikitRouter } from "./routes/uikit.js";
 import { buildJobsRouter } from "./routes/jobs.js";
 
@@ -22,7 +21,7 @@ const createContext = async ({ req, res }: CreateFastifyContextOptions) => {
 // Initialize tRPC
 const trpc = initTRPC
   .context<Awaited<ReturnType<typeof createContext>>>()
-  .create({});
+  .create({ });
 export type TRPC = typeof trpc;
 
 // Create the main app router
@@ -33,10 +32,8 @@ export const appRouter = trpc.router({
 
 // Export type definition of API
 export type AppRouter = typeof appRouter;
-export type { Job } from "./db/index.js";
 
 export const server = fastify({
-  maxParamLength: 5000,
   logger: {
     level: "error",
   },
@@ -48,11 +45,10 @@ abortController.signal.addEventListener("abort", () =>
 );
 
 await server.register(cors);
-await server.register(ws);
 await server.register(fastifyTRPCPlugin, {
   prefix: "/",
-  useWSS: true,
   trpcOptions: {
+    allowBatching: false,
     router: appRouter,
     createContext,
     onError({ path, error }) {
@@ -62,5 +58,5 @@ await server.register(fastifyTRPCPlugin, {
   } satisfies FastifyTRPCPluginOptions<AppRouter>["trpcOptions"],
 });
 
-await server.listen({ port: 3000, host: "0.0.0.0" });
-server.log.info(`tRPC server running on http://localhost:3000`);
+await server.listen({ port: 8080, host: "0.0.0.0" });
+server.log.info(`tRPC server running on http://localhost:8080`);

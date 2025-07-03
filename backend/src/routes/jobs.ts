@@ -37,10 +37,11 @@ export function buildJobsRouter(trpc: TRPC, abortSignal: AbortSignal) {
       }),
     status: trpc.procedure
       .input(object({ id: int() }))
-      .subscription(async ({ input, ctx }) => {
+      .subscription(async function* ({ input, ctx }) {
         const job = await db.job.findFirstOrThrow({ where: { id: input.id } });
         if (job.uikitJobId != null) {
-          return subscribeUikitJobStatus(input.id, ctx.res, abortSignal);
+          yield* subscribeUikitJobStatus(input.id, ctx.res, abortSignal);
+          return;
         }
         throw new Error(`unknown job type`);
       }),
