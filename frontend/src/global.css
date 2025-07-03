@@ -3,6 +3,10 @@
 * {
   overscroll-behavior: none;
   touch-action: none;
+  -webkit-font-smoothing: antialiased;
+  font-family: "Geist", sans-serif;
+  font-optical-sizing: auto;
+  font-style: normal;
 }
 
 body {
