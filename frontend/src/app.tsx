@@ -155,9 +155,10 @@ export function App() {
         style={{ transform: "scale(0)" }}
       >
         <span className="font-bold mx-4 mb-4 mt-2">Jobs</span>
-        <div className="flex flex-col basis-0 overflow-y-auto overflow-x-hidden grow">
+        <div className="flex flex-col basis-0 overflow-y-auto overflow-x-hidden grow px-2">
         {data?.jobs.map(({ uikitJob, id }) => {
           const Icon = iconMap["uikit"];
+          const isSelected = jobId === id;
           return (
             <button
               disabled={!drawerOpen}
@@ -166,7 +167,11 @@ export function App() {
                 setJobId(id.toString());
               }}
               key={id}
-              className="cursor-pointer flex items-center gap-4 px-4 py-3  hover:bg-black/40 focus:bg-black/40 outline-0 rounded-lg transition-all hover:scale-[1.02]"
+              className={`cursor-pointer flex items-center gap-4 px-4 py-3 outline-0 rounded-lg transition-all hover:scale-[1.02] ${
+                isSelected 
+                  ? "bg-white/20 hover:bg-white/25 focus:bg-white/30" 
+                  : "hover:bg-black/40 focus:bg-black/40"
+              }`}
             >
               <Icon className="w-5 h-5" />
               <span className="text-sm grow basis-0 min-w-0 text-ellipsis overflow-hidden text-nowrap">
