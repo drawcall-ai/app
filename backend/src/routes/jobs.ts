@@ -5,20 +5,49 @@ import { int, object } from "zod/v4";
 
 export function buildJobsRouter(trpc: TRPC, abortSignal: AbortSignal) {
   return trpc.router({
-    all: trpc.procedure.query(async () => {
-      return await db.job.findMany({
-        take: 10,
-        orderBy: { createdAt: "desc" },
-        select: {
-          id: true,
-          uikitJob: {
-            select: {
-              prompt: true,
+    all: trpc.procedure
+      .input(
+        object({
+          page: int().min(1).default(1),
+        }).optional()
+      )
+      .query(async ({ input }) => {
+        const page = input?.page ?? 1;
+        const limit = 10
+        const skip = (page - 1) * limit;
+
+        // Get total count for pagination metadata
+        const total = await db.job.count();
+
+        // Get paginated jobs
+        const jobs = await db.job.findMany({
+          skip,
+          take: limit,
+          orderBy: { createdAt: "desc" },
+          select: {
+            id: true,
+            uikitJob: {
+              select: {
+                prompt: true,
+              },
             },
           },
-        },
-      });
-    }),
+        });
+
+        const totalPages = Math.ceil(total / limit);
+
+        return {
+          jobs,
+          pagination: {
+            page,
+            limit,
+            total,
+            totalPages,
+            hasNext: page < totalPages,
+            hasPrev: page > 1,
+          },
+        };
+      }),
     delete: trpc.procedure
       .input(object({ id: int() }))
       .mutation(async ({ input, ctx }) => {

@@ -8,6 +8,8 @@ import { effect, signal } from "@preact/signals";
 import {
   AppWindowIcon,
   ArrowUpIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
   MapIcon,
   MenuIcon,
   PlusIcon,
@@ -55,6 +57,8 @@ const iconMap = {
 
 export function App() {
   const [jobIdString, setJobId] = useQueryState("jobId");
+  const [pageString, setPage] = useQueryState("page", { defaultValue: "1" });
+  const page = parseInt(pageString);
   const jobId = jobIdString == null ? undefined : parseInt(jobIdString);
   const inputRef = useRef<HTMLDivElement>(null);
   const cancelRef = useRef<HTMLDivElement>(null);
@@ -74,7 +78,9 @@ export function App() {
     }
   );
   useEffect(() => setJobStatus(undefined), [jobId]);
-  const { data, isError, isLoading } = trpcReact.jobs.all.useQuery();
+  const { data, isError, isLoading } = trpcReact.jobs.all.useQuery({
+    page,
+  });
   const { mutate: deleteJob } = trpcReact.jobs.delete.useMutation({
     onSuccess: (prompt, input) => {
       if (jobId === input.id) {
@@ -149,7 +155,8 @@ export function App() {
         style={{ transform: "scale(0)" }}
       >
         <span className="font-bold mx-4 mb-4 mt-2">Jobs</span>
-        {data?.map(({ uikitJob, id }) => {
+        <div className="flex flex-col basis-0 overflow-y-auto overflow-x-hidden grow">
+        {data?.jobs.map(({ uikitJob, id }) => {
           const Icon = iconMap["uikit"];
           return (
             <button
@@ -178,6 +185,33 @@ export function App() {
             </button>
           );
         })}
+        </div>
+        {/* Pagination Controls */}
+        {data && data.pagination.totalPages > 1 && (
+          <div className="flex items-center justify-between mx-4 mt-4 pt-4 border-t border-white/20">
+            <button
+              disabled={!data.pagination.hasPrev || !drawerOpen}
+              onClick={() => setPage((page - 1).toString())}
+              className="cursor-pointer flex items-center gap-2 px-3 py-2 hover:bg-black/40 focus:bg-black/40 outline-0 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ChevronLeftIcon className="w-4 h-4" />
+              <span className="text-sm">Prev</span>
+            </button>
+            
+            <span className="text-sm text-white/70">
+              Page {data.pagination.page} of {data.pagination.totalPages}
+            </span>
+            
+            <button
+              disabled={!data.pagination.hasNext || !drawerOpen}
+              onClick={() => setPage((page + 1).toString())}
+              className="cursor-pointer flex items-center gap-2 px-3 py-2 hover:bg-black/40 focus:bg-black/40 outline-0 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span className="text-sm">Next</span>
+              <ChevronRightIcon className="w-4 h-4" />
+            </button>
+          </div>
+        )}
       </div>
 
       <div
