@@ -49,8 +49,8 @@ export const auth = betterAuth({
     updateAge: 60 * 60 * 24, // 1 day
   },
   // Environment variables
-  secret: process.env.BETTER_AUTH_SECRET || "better-auth-secret-dev",
-  baseURL: process.env.BETTER_AUTH_URL || "http://localhost:8080",
+  secret: process.env.BETTER_AUTH_SECRET,
+  baseURL: process.env.BETTER_AUTH_URL,
   trustedOrigins: [
     "http://localhost:5173", // frontend dev server
     "https://app.drawcall.ai",

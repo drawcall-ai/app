@@ -26,8 +26,7 @@ export function TRPCProvider({ children }: TRPCProviderProps) {
             condition: (op) => op.type === "subscription",
             true: httpSubscriptionLink({
               url:
-                (import.meta as any).env.VITE_APP_SERVER_URL ||
-                "http://localhost:8080",
+                (import.meta as any).env.VITE_APP_SERVER_URL,
               eventSourceOptions() {
                 return {
                   withCredentials: true,
@@ -36,8 +35,7 @@ export function TRPCProvider({ children }: TRPCProviderProps) {
             }),
             false: httpLink({
               url:
-                (import.meta as any).env.VITE_APP_SERVER_URL ||
-                "http://localhost:8080",
+                (import.meta as any).env.VITE_APP_SERVER_URL,
               fetch: (url, options) => {
                 return fetch(url, {
                   ...options,
