@@ -136,7 +136,7 @@ function MainApp() {
   const { data, isError, isLoading } = trpcReact.jobs.all.useQuery({
     page,
   });
-  const { data: quota } = trpcReact.customer.quota.useQuery();
+  const { data: customerStatus } = trpcReact.customer.status.useQuery();
   const { mutate: deleteJob } = trpcReact.jobs.delete.useMutation({
     onSuccess: (prompt, input) => {
       if (jobId === input.id) {
@@ -153,7 +153,7 @@ function MainApp() {
   });
   const { mutate: createJob } = trpcReact.uikit.create.useMutation({
     onSuccess: (data) => {
-      utils.customer.quota.invalidate();
+      utils.customer.status.invalidate();
       setJobId(data.id.toString());
       if (inputElementRef.current != null) {
         inputElementRef.current.value = "";
@@ -339,36 +339,38 @@ function MainApp() {
         style={{ transform: "scale(0)" }}
       >
         {/* Quota Notice */}
-        {quota != null && (
-          <div className="flex absolute left-1/2 -translate-x-1/2 font-normal opacity-50 -top-6 items-center w-full justify-center gap-2 text-sm mb-2">
-            {quota.jobRequestQuota > 0 ? (
+        {customerStatus != null && (
+          <div className="flex absolute left-1/2 -translate-x-1/2 font-normal opacity-50 -top-6 items-center w-full justify-center gap-2 text-sm mb-2 flex flex-row gap-2">
+            {customerStatus.requestQuota > 0 ? (
               <span className="text-white/70">
-                {quota.jobRequestQuota} requests remaining this month
+                {customerStatus.requestQuota} requests remaining this month
               </span>
             ) : (
-              <span className="text-red-400 font-medium opacity-100 flex flex-row gap-2">
-                No requests remaining this month.{" "}
-                <button
-                  onClick={async () => {
-                    if (session.data == null) {
-                      return;
-                    }
-                    const url = new URL(
-                      "/checkout/pro",
-                      (import.meta as any).env.VITE_APP_SERVER_URL
-                    );
-                    url.searchParams.set("successUrl", window.location.href);
-                    if (session.data.user.isAnonymous) {
-                      setAuthDialogState({ callbackURL: url.href });
-                    } else {
-                      window.location.href = url.href;
-                    }
-                  }}
-                  className="cursor-pointer underline font-bold"
-                >
-                  Upgrade to Pro
-                </button>
+              <span className="text-red-400 font-medium opacity-100">
+                No requests remaining this month.
               </span>
+            )}
+            {!customerStatus.hasAppBenefit && (
+              <button
+                onClick={async () => {
+                  if (session.data == null) {
+                    return;
+                  }
+                  const url = new URL(
+                    "/checkout/pro",
+                    (import.meta as any).env.VITE_APP_SERVER_URL
+                  );
+                  url.searchParams.set("successUrl", window.location.href);
+                  if (session.data.user.isAnonymous) {
+                    setAuthDialogState({ callbackURL: url.href });
+                  } else {
+                    window.location.href = url.href;
+                  }
+                }}
+                className="cursor-pointer underline font-bold"
+              >
+                Upgrade to Pro
+              </button>
             )}
           </div>
         )}
@@ -380,13 +382,13 @@ function MainApp() {
               e.key === "Enter" &&
               inputElementRef.current != null &&
               inputElementRef.current.value.length > 0 &&
-              (quota?.jobRequestQuota ?? 0) > 0 &&
+              (customerStatus?.requestQuota ?? 0) > 0 &&
               createJob({ prompt: inputElementRef.current.value })
             }
             disabled={
               (isMobile && drawerOpen) ||
               jobId != null ||
-              (quota?.jobRequestQuota ?? 0) === 0
+              (customerStatus?.requestQuota ?? 0) === 0
             }
             ref={inputElementRef}
             placeholder="Describe the 3D user interface"
@@ -396,16 +398,16 @@ function MainApp() {
             disabled={
               (isMobile && drawerOpen) ||
               jobId != null ||
-              (quota?.jobRequestQuota ?? 0) === 0
+              (customerStatus?.requestQuota ?? 0) === 0
             }
             onClick={() =>
               inputElementRef.current != null &&
               inputElementRef.current.value.length > 0 &&
-              (quota?.jobRequestQuota ?? 0) > 0 &&
+              (customerStatus?.requestQuota ?? 0) > 0 &&
               createJob({ prompt: inputElementRef.current.value })
             }
             className={
-              ((quota?.jobRequestQuota ?? 0) > 0
+              ((customerStatus?.requestQuota ?? 0) > 0
                 ? "bg-black/0 hover:bg-black/20 focus:bg-black/40 hover:scale-100 cursor-pointer"
                 : "") +
               "outline-0 outline-white/10 scale-90 transition-all rounded-full w-[56px] h-[56px] flex items-center justify-center"
