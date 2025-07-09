@@ -15,7 +15,8 @@
     "nuqs": "^2.4.3",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "three": "^0.178.0"
+    "three": "^0.178.0",
+    "better-auth": "^1.2.12"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.11",
