@@ -11,6 +11,8 @@ import {
 import { rerouteToMachine } from "../fly.js";
 import { FastifyReply } from "fastify";
 import { createProtectedProcedure } from "../lib/protected-procedure.js";
+import { TRPCError } from "@trpc/server";
+import { getJobRequestQuota } from "../utils.js";
 
 const jobStreamMap = new Map<string, DurableStream>();
 
@@ -145,6 +147,14 @@ export function buildUikitRouter(trpc: TRPC, abortSignal: AbortSignal) {
         })
       )
       .mutation(async ({ input, ctx }) => {
+        // Count the number of jobs created by the user this month
+        const quota = await getJobRequestQuota(ctx.user.id);
+        if (quota === 0) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: `exceeding job quota of 50`,
+          });
+        }
         const { id: uikitJobId } = await db.uikitJob.create({
           data: {
             machineId: process.env.FLY_MACHINE_ID,

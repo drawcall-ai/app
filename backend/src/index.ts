@@ -9,6 +9,7 @@ import cors from "@fastify/cors";
 import { buildUikitRouter } from "./routes/uikit.js";
 import { buildJobsRouter } from "./routes/jobs.js";
 import { auth } from "./auth.js";
+import { buildCustomerRouter } from "./routes/customer.js";
 
 const abortController = new AbortController();
 const cleanup = () => abortController.abort();
@@ -19,34 +20,35 @@ const createContext = async ({ req, res }: CreateFastifyContextOptions) => {
   // Convert headers to the format Better Auth expects
   const headers = new Headers();
   Object.entries(req.headers).forEach(([key, value]) => {
-    if (typeof value === 'string') {
+    if (typeof value === "string") {
       headers.set(key, value);
     } else if (Array.isArray(value)) {
-      headers.set(key, value.join(', '));
+      headers.set(key, value.join(", "));
     }
   });
 
   // Get session from Better Auth
   const session = await auth.api.getSession({ headers });
 
-  return { 
-    req, 
-    res, 
+  return {
+    req,
+    res,
     user: session?.user || null,
-    session: session?.session || null
+    session: session?.session || null,
   };
 };
 
 // Initialize tRPC
 const trpc = initTRPC
   .context<Awaited<ReturnType<typeof createContext>>>()
-  .create({ });
+  .create({});
 export type TRPC = typeof trpc;
 
 // Create the main app router
 export const appRouter = trpc.router({
   uikit: buildUikitRouter(trpc, abortController.signal),
   jobs: buildJobsRouter(trpc, abortController.signal),
+  customer: buildCustomerRouter(trpc, abortController.signal),
 });
 
 // Export type definition of API
@@ -79,28 +81,31 @@ server.all("/api/auth/*", async (request, reply) => {
   // Convert Fastify request to standard Request object
   const url = new URL(request.url, `http://${request.headers.host}`);
   const headers = new Headers();
-  
+
   Object.entries(request.headers).forEach(([key, value]) => {
-    if (typeof value === 'string') {
+    if (typeof value === "string") {
       headers.set(key, value);
     } else if (Array.isArray(value)) {
-      headers.set(key, value.join(', '));
+      headers.set(key, value.join(", "));
     }
   });
 
   const webRequest = new Request(url.toString(), {
     method: request.method,
     headers,
-    body: request.method !== 'GET' && request.method !== 'HEAD' ? JSON.stringify(request.body) : undefined,
+    body:
+      request.method !== "GET" && request.method !== "HEAD"
+        ? JSON.stringify(request.body)
+        : undefined,
   });
 
   const response = await auth.handler(webRequest);
-  
+
   // Copy response headers
   response.headers.forEach((value, key) => {
     reply.header(key, value);
   });
-  
+
   reply.status(response.status);
   return response.body;
 });
