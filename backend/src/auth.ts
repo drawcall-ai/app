@@ -5,7 +5,7 @@ import { db } from "./db/index.js";
 import { Polar } from "@polar-sh/sdk";
 import { polar, portal } from "@polar-sh/better-auth";
 
-const polarClient = new Polar({
+export const polarClient = new Polar({
   accessToken: process.env.POLAR_ACCESS_TOKEN,
   server: "sandbox",
 });
