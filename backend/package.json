@@ -13,10 +13,7 @@
     "generate": "prisma generate --schema ./src/db/schema.prisma"
   },
   "dependencies": {
-    "@dotenvx/dotenvx": "^1.39.0",
     "@fastify/cors": "^11.0.0",
-    "@fastify/websocket": "^11.0.2",
-    "@node-rs/argon2": "^2.0.2",
     "@polar-sh/better-auth": "1.0.4",
     "@polar-sh/sdk": "^0.34.3",
     "@prisma/client": "6.11.0",
@@ -24,18 +21,11 @@
     "fastify": "^5.2.1",
     "prisma": "^6.11.0",
     "prisma-client": "^0.0.0",
-    "ws": "^8.15.0",
     "zod": "^3.22.4",
     "better-auth": "^1.2.12"
   },
   "devDependencies": {
-    "@types/ws": "^8.5.10",
-    "concurrently": "^9.1.2",
+    "@dotenvx/dotenvx": "^1.39.0",
     "ts-node": "^10.9.2"
-  },
-  "pnpm": {
-    "patchedDependencies": {
-      "@polar-sh/better-auth@1.0.4": "patches/@polar-sh__better-auth@1.0.4.patch"
-    }
   }
 }
