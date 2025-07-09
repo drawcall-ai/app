@@ -615,7 +615,7 @@ function UserInterface({
       width: "100%",
       marginX: "auto",
       padding: 16,
-      gap: 16,
+      gap: 32,
       flexDirection: "column",
       justifyContent: "flex-end",
       alignItems: "center",
