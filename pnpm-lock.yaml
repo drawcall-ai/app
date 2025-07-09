@@ -4,18 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-patchedDependencies:
-  '@polar-sh/better-auth@1.0.4':
-    hash: bc28737ab3995a4150821b3ce67f71e97d8d28c8153d490efa20ed00997a3a92
-    path: patches/@polar-sh__better-auth@1.0.4.patch
-
 importers:
 
   .:
-    dependencies:
-      better-auth:
-        specifier: ^1.2.12
-        version: 1.2.12
     devDependencies:
       '@types/node':
         specifier: ^20
@@ -40,7 +31,7 @@ importers:
         version: 2.0.2
       '@polar-sh/better-auth':
         specifier: 1.0.4
-        version: 1.0.4(patch_hash=bc28737ab3995a4150821b3ce67f71e97d8d28c8153d490efa20ed00997a3a92)(@polar-sh/sdk@0.34.3(zod@3.25.67))(better-auth@1.2.12)
+        version: 1.0.4(@polar-sh/sdk@0.34.3(zod@3.25.67))(better-auth@1.2.12)
       '@polar-sh/sdk':
         specifier: ^0.34.3
         version: 0.34.3(zod@3.25.67)
@@ -50,6 +41,9 @@ importers:
       '@trpc/server':
         specifier: ^11.4.3
         version: 11.4.3(typescript@5.8.3)
+      better-auth:
+        specifier: ^1.2.12
+        version: 1.2.12
       fastify:
         specifier: ^5.2.1
         version: 5.4.0
@@ -92,7 +86,7 @@ importers:
         version: 1.21.0(three@0.178.0)
       '@polar-sh/better-auth':
         specifier: ^1.0.4
-        version: 1.0.4(patch_hash=bc28737ab3995a4150821b3ce67f71e97d8d28c8153d490efa20ed00997a3a92)(@polar-sh/sdk@0.34.3(zod@3.25.67))(better-auth@1.2.12)
+        version: 1.0.4(@polar-sh/sdk@0.34.3(zod@3.25.67))(better-auth@1.2.12)
       '@preact/signals':
         specifier: ^2.2.1
         version: 2.2.1(preact@10.26.9)
@@ -2870,7 +2864,7 @@ snapshots:
       glsl-noise: 0.0.0
       three: 0.178.0
 
-  '@polar-sh/better-auth@1.0.4(patch_hash=bc28737ab3995a4150821b3ce67f71e97d8d28c8153d490efa20ed00997a3a92)(@polar-sh/sdk@0.34.3(zod@3.25.67))(better-auth@1.2.12)':
+  '@polar-sh/better-auth@1.0.4(@polar-sh/sdk@0.34.3(zod@3.25.67))(better-auth@1.2.12)':
     dependencies:
       '@polar-sh/sdk': 0.34.3(zod@3.25.67)
       better-auth: 1.2.12

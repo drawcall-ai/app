@@ -25,11 +25,17 @@
     "prisma": "^6.11.0",
     "prisma-client": "^0.0.0",
     "ws": "^8.15.0",
-    "zod": "^3.22.4"
+    "zod": "^3.22.4",
+    "better-auth": "^1.2.12"
   },
   "devDependencies": {
     "@types/ws": "^8.5.10",
     "concurrently": "^9.1.2",
     "ts-node": "^10.9.2"
+  },
+  "pnpm": {
+    "patchedDependencies": {
+      "@polar-sh/better-auth@1.0.4": "patches/@polar-sh__better-auth@1.0.4.patch"
+    }
   }
 }
