@@ -2,11 +2,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React, { useMemo } from "react";
 import {
   createTRPCReact,
-  httpBatchLink,
-  httpBatchStreamLink,
   httpLink,
   httpSubscriptionLink,
   splitLink,
+  CreateTRPCReact,
 } from "@trpc/react-query";
 import type { AppRouter } from "../../backend/src/index.js";
 
@@ -14,7 +13,8 @@ interface TRPCProviderProps {
   children: React.ReactNode;
 }
 
-export const trpcReact = createTRPCReact<AppRouter>();
+export const trpcReact: CreateTRPCReact<AppRouter, unknown> =
+  createTRPCReact<AppRouter>();
 
 export function TRPCProvider({ children }: TRPCProviderProps) {
   const trpcClient = useMemo(
@@ -25,10 +25,25 @@ export function TRPCProvider({ children }: TRPCProviderProps) {
             // uses the httpSubscriptionLink for subscriptions
             condition: (op) => op.type === "subscription",
             true: httpSubscriptionLink({
-              url: (import.meta as any).env.VITE_APP_SERVER_URL,
+              url:
+                (import.meta as any).env.VITE_APP_SERVER_URL ||
+                "http://localhost:8080",
+              eventSourceOptions() {
+                return {
+                  withCredentials: true,
+                };
+              },
             }),
             false: httpLink({
-              url: (import.meta as any).env.VITE_APP_SERVER_URL,
+              url:
+                (import.meta as any).env.VITE_APP_SERVER_URL ||
+                "http://localhost:8080",
+              fetch: (url, options) => {
+                return fetch(url, {
+                  ...options,
+                  credentials: "include", // Include cookies in requests
+                });
+              },
             }),
           }),
         ],

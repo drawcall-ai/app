@@ -7,6 +7,7 @@
   "scripts": {
     "db:push": "dotenvx run -f .env -- prisma db push --schema ./src/db/schema.prisma",
     "dev": "dotenvx run -f .env -- node --watch --loader ts-node/esm ./src/index.ts",
+    "dev:start": "dotenvx run -f .env -- node ./dist/index.js",
     "build": "tsc",
     "start": "node dist/index.js",
     "generate": "prisma generate --schema ./src/db/schema.prisma"
@@ -15,6 +16,9 @@
     "@dotenvx/dotenvx": "^1.39.0",
     "@fastify/cors": "^11.0.0",
     "@fastify/websocket": "^11.0.2",
+    "@node-rs/argon2": "^2.0.2",
+    "@polar-sh/better-auth": "1.0.4",
+    "@polar-sh/sdk": "^0.34.3",
     "@prisma/client": "6.11.0",
     "@trpc/server": "^11.4.3",
     "fastify": "^5.2.1",

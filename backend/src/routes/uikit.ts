@@ -10,11 +10,12 @@ import {
 } from "../stream.js";
 import { rerouteToMachine } from "../fly.js";
 import { FastifyReply } from "fastify";
+import { createProtectedProcedure } from "../lib/protected-procedure.js";
 
-const jobStreamMap = new Map<number, DurableStream>();
+const jobStreamMap = new Map<string, DurableStream>();
 
 export async function* subscribeUikitJobStatus(
-  jobId: number,
+  jobId: string,
   reply: FastifyReply,
   abortSignal: AbortSignal
 ) {
@@ -41,7 +42,9 @@ export async function* subscribeUikitJobStatus(
   }
   const { canceled, error, machineId, output } =
     await db.uikitJob.findFirstOrThrow({
-      where: { Job: { is: { id: { equals: jobId } } } },
+      where: {
+        Job: { is: { id: jobId } },
+      },
       select: {
         machineId: true,
         canceled: true,
@@ -65,7 +68,7 @@ export async function* subscribeUikitJobStatus(
 }
 
 export async function deleteUikitJob(
-  jobId: number,
+  jobId: string,
   reply: FastifyReply
 ): Promise<boolean> {
   const jobStream = jobStreamMap.get(jobId);
@@ -75,7 +78,7 @@ export async function deleteUikitJob(
   }
   const { canceled, error, machineId, output } =
     await db.uikitJob.findFirstOrThrow({
-      where: { Job: { is: { id: { equals: jobId } } } },
+      where: { Job: { id: jobId } },
       select: {
         machineId: true,
         canceled: true,
@@ -94,9 +97,11 @@ export async function deleteUikitJob(
 }
 
 export function buildUikitRouter(trpc: TRPC, abortSignal: AbortSignal) {
+  const protectedProcedure = createProtectedProcedure(trpc);
+
   return trpc.router({
-    output: trpc.procedure
-      .input(z.object({ id: z.int() }))
+    output: protectedProcedure
+      .input(z.object({ id: z.string() }))
       .subscription(async function* ({ input, ctx }) {
         const jobStream = jobStreamMap.get(input.id);
         if (jobStream != null) {
@@ -105,7 +110,12 @@ export function buildUikitRouter(trpc: TRPC, abortSignal: AbortSignal) {
         }
         const { canceled, error, machineId, output } =
           await db.uikitJob.findFirstOrThrow({
-            where: { Job: { is: { id: { equals: input.id } } } },
+            where: {
+              Job: {
+                id: input.id,
+                userId: ctx.user.id,
+              },
+            },
             select: {
               machineId: true,
               canceled: true,
@@ -128,21 +138,24 @@ export function buildUikitRouter(trpc: TRPC, abortSignal: AbortSignal) {
         }
         rerouteToMachine(ctx.res, machineId!);
       }),
-    create: trpc.procedure
+    create: protectedProcedure
       .input(
         z.object({
           prompt: z.string(),
         })
       )
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
+        const { id: uikitJobId } = await db.uikitJob.create({
+          data: {
+            machineId: process.env.FLY_MACHINE_ID,
+            prompt: input.prompt,
+          },
+          select: { id: true },
+        });
         const job = await db.job.create({
           data: {
-            uikitJob: {
-              create: {
-                machineId: process.env.FLY_MACHINE_ID,
-                prompt: input.prompt,
-              },
-            },
+            userId: ctx.user.id,
+            uikitJobId,
           },
           include: {
             uikitJob: { select: { prompt: true, id: true } },
@@ -155,8 +168,8 @@ export function buildUikitRouter(trpc: TRPC, abortSignal: AbortSignal) {
 }
 
 async function requestUikit(
-  jobId: number,
-  uikitJobId: number,
+  jobId: string,
+  uikitJobId: string,
   prompt: string,
   abortSignal: AbortSignal
 ) {

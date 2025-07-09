@@ -2,5 +2,13 @@
     "devDependencies": {
         "@types/node": "^20",
         "typescript": "^5.8.3"
+    },
+    "dependencies": {
+        "better-auth": "^1.2.12"
+    },
+    "pnpm": {
+        "patchedDependencies": {
+            "@polar-sh/better-auth@1.0.4": "patches/@polar-sh__better-auth@1.0.4.patch"
+        }
     }
 }

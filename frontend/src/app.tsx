@@ -1,7 +1,7 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { RefObject, useEffect, useMemo, useRef, useState } from "react";
 import { Container, Fullscreen, reversePainterSortStable } from "@pmndrs/uikit";
-import { Environment, Grid, OrbitControls } from "@react-three/drei";
+import { Environment, Grid } from "@react-three/drei";
 import { MeshTransmissionMaterial, useFBO } from "@pmndrs/vanilla";
 import { Euler, Matrix4, NoToneMapping, Quaternion, Vector3 } from "three";
 import { effect, signal } from "@preact/signals";
@@ -22,6 +22,9 @@ import { useQueryState } from "nuqs";
 import { interpret } from "@pmndrs/uikitml";
 import * as fontFamilies from "@pmndrs/msdfonts";
 import { skipToken } from "@tanstack/react-query";
+import { AuthDialog } from "./components/AuthDialog";
+import { UserProfile } from "./components/UserProfile";
+import { authClient, useSession } from "./auth-client";
 
 const materials: Array<MeshTransmissionMaterial> = [];
 
@@ -55,11 +58,58 @@ const iconMap = {
   map: MapIcon,
 };
 
+function AuthGuard({ children }: { children: React.ReactNode }) {
+  const { data: session, isPending } = useSession();
+  const [isInitializing, setIsInitializing] = useState(true);
+  const utils = trpcReact.useUtils();
+
+  useEffect(() => {
+    const initializeAuth = async () => {
+      try {
+        // If user is not logged in, sign them in anonymously
+        if (!session?.user && !isPending) {
+          await authClient.signIn.anonymous();
+          await utils.invalidate();
+        }
+      } catch (error) {
+        console.error("Failed to initialize anonymous authentication:", error);
+      } finally {
+        setIsInitializing(false);
+      }
+    };
+
+    initializeAuth();
+  }, [session, isPending]);
+
+  // Show loading state while checking/initializing authentication
+  if (isPending || isInitializing || !session?.user) {
+    return (
+      <div className="fixed inset-0 bg-[#333] flex items-center justify-center">
+        <div className="text-white text-center">
+          <div className="mb-4">
+            <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto"></div>
+          </div>
+          <p className="text-lg">Initializing...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+}
+
 export function App() {
-  const [jobIdString, setJobId] = useQueryState("jobId");
+  return (
+    <AuthGuard>
+      <MainApp />
+    </AuthGuard>
+  );
+}
+
+function MainApp() {
+  const [jobId, setJobId] = useQueryState("jobId");
   const [pageString, setPage] = useQueryState("page", { defaultValue: "1" });
   const page = parseInt(pageString);
-  const jobId = jobIdString == null ? undefined : parseInt(jobIdString);
   const inputRef = useRef<HTMLDivElement>(null);
   const cancelRef = useRef<HTMLDivElement>(null);
   const newRef = useRef<HTMLDivElement>(null);
@@ -67,6 +117,7 @@ export function App() {
   const drawerRef = useRef<HTMLDivElement>(null);
   const inputElementRef = useRef<HTMLInputElement>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [authDialogOpen, setAuthDialogOpen] = useState(false);
   const utils = trpcReact.useUtils();
   const [jobStatus, setJobStatus] = useState<
     "error" | "canceled" | "finished" | "running" | undefined
@@ -149,6 +200,16 @@ export function App() {
         {jobId != null && <Result id={jobId} />}
       </Canvas>
 
+      {/* Auth UI Components */}
+      <div className="absolute top-4 right-4 z-50">
+        <UserProfile onAuthClick={() => setAuthDialogOpen(true)} />
+      </div>
+
+      <AuthDialog
+        isOpen={authDialogOpen}
+        onClose={() => setAuthDialogOpen(false)}
+      />
+
       <div
         className="absolute flex flex-col gap-2 p-4 -translate-x-1/2 top-1/2 left-1/2 -translate-y-1/2 text-white font-[inter] font-medium"
         ref={drawerRef}
@@ -156,40 +217,40 @@ export function App() {
       >
         <span className="font-bold mx-4 mb-4 mt-2">Jobs</span>
         <div className="flex flex-col basis-0 overflow-y-auto overflow-x-hidden grow px-2">
-        {data?.jobs.map(({ uikitJob, id }) => {
-          const Icon = iconMap["uikit"];
-          const isSelected = jobId === id;
-          return (
-            <button
-              disabled={!drawerOpen}
-              onClick={() => {
-                setDrawerOpen(false);
-                setJobId(id.toString());
-              }}
-              key={id}
-              className={`cursor-pointer flex items-center gap-4 px-4 py-3 outline-0 rounded-lg transition-all hover:scale-[1.02] ${
-                isSelected 
-                  ? "bg-white/20 hover:bg-white/25 focus:bg-white/30" 
-                  : "hover:bg-black/40 focus:bg-black/40"
-              }`}
-            >
-              <Icon className="w-5 h-5" />
-              <span className="text-sm grow basis-0 min-w-0 text-ellipsis overflow-hidden text-nowrap">
-                {uikitJob!.prompt}
-              </span>
+          {data?.jobs.map(({ uikitJob, id }) => {
+            const Icon = iconMap["uikit"];
+            const isSelected = jobId === id;
+            return (
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  deleteJob({ id });
-                }}
                 disabled={!drawerOpen}
-                className="cursor-pointer rounded-full outline-0 transition-all p-2 bg-white/0 hover:bg-white/20 focus:bg-white/40 justify-self-end"
+                onClick={() => {
+                  setDrawerOpen(false);
+                  setJobId(id.toString());
+                }}
+                key={id}
+                className={`cursor-pointer flex items-center gap-4 px-4 py-3 outline-0 rounded-lg transition-all hover:scale-[1.02] ${
+                  isSelected
+                    ? "bg-white/20 hover:bg-white/25 focus:bg-white/30"
+                    : "hover:bg-black/40 focus:bg-black/40"
+                }`}
               >
-                <XIcon className="w-4 h-4" />
+                <Icon className="w-5 h-5" />
+                <span className="text-sm grow basis-0 min-w-0 text-ellipsis overflow-hidden text-nowrap">
+                  {uikitJob!.prompt}
+                </span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteJob({ id });
+                  }}
+                  disabled={!drawerOpen}
+                  className="cursor-pointer rounded-full outline-0 transition-all p-2 bg-white/0 hover:bg-white/20 focus:bg-white/40 justify-self-end"
+                >
+                  <XIcon className="w-4 h-4" />
+                </button>
               </button>
-            </button>
-          );
-        })}
+            );
+          })}
         </div>
         {/* Pagination Controls */}
         {data && data.pagination.totalPages > 1 && (
@@ -202,11 +263,11 @@ export function App() {
               <ChevronLeftIcon className="w-4 h-4" />
               <span className="text-sm">Prev</span>
             </button>
-            
+
             <span className="text-sm text-white/70">
               Page {data.pagination.page} of {data.pagination.totalPages}
             </span>
-            
+
             <button
               disabled={!data.pagination.hasNext || !drawerOpen}
               onClick={() => setPage((page + 1).toString())}
@@ -307,7 +368,7 @@ function Camera() {
   return null;
 }
 
-function Result({ id }: { id: number }) {
+function Result({ id }: { id: string }) {
   const [stringData, setStringData] = useState("");
   useEffect(() => {
     setStringData("");

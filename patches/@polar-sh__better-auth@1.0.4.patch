@@ -1,0 +1,44 @@
+diff --git a/dist/index.cjs b/dist/index.cjs
+index 1628a2631f1d21c4e0a287ab4be96918654799e7..8220ba2ba3f23eb31dedd59292aa26ff2ef7b75d 100644
+--- a/dist/index.cjs
++++ b/dist/index.cjs
+@@ -32,7 +32,7 @@ module.exports = __toCommonJS(index_exports);
+ // src/hooks/customer.ts
+ var import_api = require("better-auth/api");
+ var onUserCreate = (options) => async (user, ctx) => {
+-  if (ctx && options.createCustomerOnSignUp) {
++  if (ctx && options.createCustomerOnSignUp && !user.isAnonymous) {
+     try {
+       const params = options.getCustomerCreateParams ? await options.getCustomerCreateParams({
+         user
+@@ -71,7 +71,7 @@ var onUserCreate = (options) => async (user, ctx) => {
+   }
+ };
+ var onUserUpdate = (options) => async (user, ctx) => {
+-  if (ctx && options.createCustomerOnSignUp) {
++  if (ctx && options.createCustomerOnSignUp && !user.isAnonymous) {
+     try {
+       await options.client.customers.updateExternal({
+         externalId: user.id,
+diff --git a/dist/index.js b/dist/index.js
+index f1751c9345db63518be0f31c4c8cfb9c9fbb0198..36e7df100299852d895cc712ddb7848c47b5dcc0 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -1,7 +1,7 @@
+ // src/hooks/customer.ts
+ import { APIError } from "better-auth/api";
+ var onUserCreate = (options) => async (user, ctx) => {
+-  if (ctx && options.createCustomerOnSignUp) {
++  if (ctx && options.createCustomerOnSignUp && !user.isAnonymous) {
+     try {
+       const params = options.getCustomerCreateParams ? await options.getCustomerCreateParams({
+         user
+@@ -40,7 +40,7 @@ var onUserCreate = (options) => async (user, ctx) => {
+   }
+ };
+ var onUserUpdate = (options) => async (user, ctx) => {
+-  if (ctx && options.createCustomerOnSignUp) {
++  if (ctx && options.createCustomerOnSignUp && !user.isAnonymous) {
+     try {
+       await options.client.customers.updateExternal({
+         externalId: user.id,

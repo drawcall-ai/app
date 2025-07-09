@@ -2,10 +2,11 @@
   "name": "frontend",
   "type": "module",
   "dependencies": {
-    "@pmndrs/uikitml": "^0.0.10",
     "@pmndrs/msdfonts": "^0.8.21",
     "@pmndrs/uikit": "^1.0.23",
+    "@pmndrs/uikitml": "^0.0.10",
     "@pmndrs/vanilla": "^1.21.0",
+    "@polar-sh/better-auth": "^1.0.4",
     "@preact/signals": "^2.2.1",
     "@react-three/drei": "^10.4.2",
     "@react-three/fiber": "^9.1.4",
