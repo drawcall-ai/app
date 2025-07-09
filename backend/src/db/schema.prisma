@@ -20,6 +20,8 @@ model Job {
     uikitJobId String?   @unique
     uikitJob   UikitJob? @relation(fields: [uikitJobId], references: [id])
 
+    deletedAt DateTime?
+
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 }

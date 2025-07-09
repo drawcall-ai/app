@@ -20,14 +20,16 @@ export function buildJobsRouter(trpc: TRPC, abortSignal: AbortSignal) {
         const skip = (page - 1) * limit;
 
         // Get total count for pagination metadata
-        const total = await db.job.count();
+        const total = await db.job.count({
+          where: { userId: ctx.user.id },
+        });
 
         // Get paginated jobs
         const jobs = await db.job.findMany({
           skip,
           take: limit,
           orderBy: { createdAt: "desc" },
-          where: { userId: ctx.user.id },
+          where: { userId: ctx.user.id, deletedAt: { equals: null } },
           select: {
             id: true,
             uikitJob: {
@@ -63,8 +65,9 @@ export function buildJobsRouter(trpc: TRPC, abortSignal: AbortSignal) {
           if (!success) {
             return;
           }
-          const { uikitJob } = await db.job.delete({
+          const { uikitJob } = await db.job.update({
             where: { id: input.id },
+            data: { deletedAt: new Date() },
             select: { uikitJob: { select: { prompt: true } } },
           });
           return uikitJob?.prompt;
