@@ -3,12 +3,33 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { anonymous } from "better-auth/plugins";
 import { db } from "./db/index.js";
 import { Polar } from "@polar-sh/sdk";
-import { polar, portal } from "@polar-sh/better-auth";
+import { polar, portal, webhooks } from "@polar-sh/better-auth";
+import { createClient, RedisClientType } from "redis";
+import { FastifyRequest } from "fastify";
+import { invalidateHasPolarAppBenefit } from "./utils.js";
+
+export const redisClient: RedisClientType = createClient({
+  url: process.env.REDIS_URL,
+});
+await redisClient.connect();
 
 export const polarClient = new Polar({
   accessToken: process.env.POLAR_ACCESS_TOKEN,
-  server: "sandbox",
+  server: process.env.NODE_ENV === "production" ? "production" : "sandbox",
 });
+
+export function getSession(req: FastifyRequest) {
+  const headers = new Headers();
+  Object.entries(req.headers).forEach(([key, value]) => {
+    if (typeof value === "string") {
+      headers.set(key, value);
+    } else if (Array.isArray(value)) {
+      headers.set(key, value.join(", "));
+    }
+  });
+
+  return auth.api.getSession({ headers });
+}
 
 export const auth = betterAuth({
   database: prismaAdapter(db, {
@@ -28,7 +49,15 @@ export const auth = betterAuth({
     polar({
       client: polarClient,
       createCustomerOnSignUp: true,
-      use: [portal()],
+      use: [
+        portal(),
+        webhooks({
+          async onCustomerStateChanged(payload) {
+            await invalidateHasPolarAppBenefit(payload.data.externalId!);
+          },
+          secret: process.env.POLAR_WEBHOOK_SECRET!,
+        }),
+      ],
     }),
   ],
   emailAndPassword: {

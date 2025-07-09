@@ -148,7 +148,10 @@ export function buildUikitRouter(trpc: TRPC, abortSignal: AbortSignal) {
       )
       .mutation(async ({ input, ctx }) => {
         // Count the number of jobs created by the user this month
-        const quota = await getJobRequestQuota(ctx.user.id);
+        const quota = await getJobRequestQuota(
+          ctx.user.id,
+          ctx.user.isAnonymous!
+        );
         if (quota === 0) {
           throw new TRPCError({
             code: "FORBIDDEN",

@@ -8,7 +8,10 @@ export function buildCustomerRouter(trpc: TRPC, abortSignal: AbortSignal) {
   return trpc.router({
     quota: protectedProcedure.query(async ({ ctx }) => {
       return {
-        jobRequestQuota: await getJobRequestQuota(ctx.user.id),
+        jobRequestQuota: await getJobRequestQuota(
+          ctx.user.id,
+          ctx.user.isAnonymous!
+        ),
       };
     }),
   });

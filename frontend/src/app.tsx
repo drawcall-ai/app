@@ -69,6 +69,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
         // If user is not logged in, sign them in anonymously
         if (!session?.user && !isPending) {
           await authClient.signIn.anonymous();
+          authClient.checkout({});
           await utils.invalidate();
         }
       } catch (error) {
@@ -107,6 +108,7 @@ export function App() {
 }
 
 function MainApp() {
+  const session = useSession();
   const [jobId, setJobId] = useQueryState("jobId");
   const [pageString, setPage] = useQueryState("page", { defaultValue: "1" });
   const page = parseInt(pageString);
@@ -117,7 +119,9 @@ function MainApp() {
   const drawerRef = useRef<HTMLDivElement>(null);
   const inputElementRef = useRef<HTMLInputElement>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [authDialogOpen, setAuthDialogOpen] = useState(false);
+  const [authDialogState, setAuthDialogState] = useState<
+    { callbackURL: string } | undefined
+  >(undefined);
   const utils = trpcReact.useUtils();
   const [jobStatus, setJobStatus] = useState<
     "error" | "canceled" | "finished" | "running" | undefined
@@ -204,13 +208,19 @@ function MainApp() {
 
       {/* Auth UI Components */}
       <div className="absolute top-4 right-4 z-50">
-        <UserProfile onAuthClick={() => setAuthDialogOpen(true)} />
+        <UserProfile
+          onAuthClick={() =>
+            setAuthDialogState({ callbackURL: window.location.href })
+          }
+        />
       </div>
 
-      <AuthDialog
-        isOpen={authDialogOpen}
-        onClose={() => setAuthDialogOpen(false)}
-      />
+      {authDialogState != null && (
+        <AuthDialog
+          callbackURL={authDialogState.callbackURL}
+          onClose={() => setAuthDialogState(undefined)}
+        />
+      )}
 
       <div
         className="absolute flex flex-col gap-2 p-4 -translate-x-1/2 top-1/2 left-1/2 -translate-y-1/2 text-white font-[inter] font-medium"
@@ -330,14 +340,34 @@ function MainApp() {
       >
         {/* Quota Notice */}
         {quota != null && (
-          <div className="flex absolute left-1/2 -translate-x-1/2 font-normal opacity-50 -top-6 items-center gap-2 text-sm mb-2">
+          <div className="flex absolute left-1/2 -translate-x-1/2 font-normal opacity-50 -top-6 items-center w-full justify-center gap-2 text-sm mb-2">
             {quota.jobRequestQuota > 0 ? (
               <span className="text-white/70">
                 {quota.jobRequestQuota} requests remaining this month
               </span>
             ) : (
-              <span className="text-red-400 font-medium opacity-100">
-                No requests remaining this month
+              <span className="text-red-400 font-medium opacity-100 flex flex-row gap-2">
+                No requests remaining this month.{" "}
+                <button
+                  onClick={async () => {
+                    if (session.data == null) {
+                      return;
+                    }
+                    const url = new URL(
+                      "/checkout/pro",
+                      (import.meta as any).env.VITE_APP_SERVER_URL
+                    );
+                    url.searchParams.set("successUrl", window.location.href);
+                    if (session.data.user.isAnonymous) {
+                      setAuthDialogState({ callbackURL: url.href });
+                    } else {
+                      window.location.href = url.href;
+                    }
+                  }}
+                  className="cursor-pointer underline font-bold"
+                >
+                  Upgrade to Pro
+                </button>
               </span>
             )}
           </div>

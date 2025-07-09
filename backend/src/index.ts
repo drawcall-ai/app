@@ -8,35 +8,14 @@ import fastify from "fastify";
 import cors from "@fastify/cors";
 import { buildUikitRouter } from "./routes/uikit.js";
 import { buildJobsRouter } from "./routes/jobs.js";
-import { auth } from "./auth.js";
+import { getSession, auth } from "./auth.js";
 import { buildCustomerRouter } from "./routes/customer.js";
+import { buildCheckoutRoutes } from "./checkout.js";
 
 const abortController = new AbortController();
 const cleanup = () => abortController.abort();
 process.on("SIGINT", cleanup);
 process.on("SIGTERM", cleanup);
-
-const createContext = async ({ req, res }: CreateFastifyContextOptions) => {
-  // Convert headers to the format Better Auth expects
-  const headers = new Headers();
-  Object.entries(req.headers).forEach(([key, value]) => {
-    if (typeof value === "string") {
-      headers.set(key, value);
-    } else if (Array.isArray(value)) {
-      headers.set(key, value.join(", "));
-    }
-  });
-
-  // Get session from Better Auth
-  const session = await auth.api.getSession({ headers });
-
-  return {
-    req,
-    res,
-    user: session?.user || null,
-    session: session?.session || null,
-  };
-};
 
 // Initialize tRPC
 const trpc = initTRPC
@@ -76,6 +55,8 @@ await server.register(cors, {
   allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
 });
 
+buildCheckoutRoutes(server);
+
 // Register Better Auth routes
 server.all("/api/auth/*", async (request, reply) => {
   // Convert Fastify request to standard Request object
@@ -109,6 +90,16 @@ server.all("/api/auth/*", async (request, reply) => {
   reply.status(response.status);
   return response.body;
 });
+
+const createContext = async ({ req, res }: CreateFastifyContextOptions) => {
+  const session = await getSession(req);
+  return {
+    req,
+    res,
+    user: session?.user || null,
+    session: session?.session || null,
+  };
+};
 
 await server.register(fastifyTRPCPlugin, {
   prefix: "/",

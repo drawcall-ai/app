@@ -10,7 +10,8 @@
     "dev:start": "dotenvx run -f .env -- node ./dist/index.js",
     "build": "tsc",
     "start": "node dist/index.js",
-    "generate": "prisma generate --schema ./src/db/schema.prisma"
+    "generate": "prisma generate --schema ./src/db/schema.prisma",
+    "dev:webhook": "ngrok http --url=roughly-genuine-leopard.ngrok-free.app 8080"
   },
   "dependencies": {
     "@fastify/cors": "^11.0.0",
@@ -18,12 +19,13 @@
     "@polar-sh/sdk": "^0.34.3",
     "@prisma/client": "6.11.0",
     "@trpc/server": "^11.4.3",
+    "better-auth": "^1.2.12",
     "fastify": "^5.2.1",
+    "fastify-type-provider-zod": "^5.0.2",
     "prisma": "^6.11.0",
     "prisma-client": "^0.0.0",
-    "zod": "^3.22.4",
-    "better-auth": "^1.2.12",
-    "redis": "^5.6.0"
+    "redis": "^5.6.0",
+    "zod": "^3.22.4"
   },
   "devDependencies": {
     "@dotenvx/dotenvx": "^1.39.0",

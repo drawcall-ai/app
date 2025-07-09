@@ -1,12 +1,10 @@
-import { polarClient } from "./auth.js";
+import { FastifyRequest } from "fastify";
+import { redisClient, polarClient } from "./auth.js";
 import { db } from "./db/index.js";
-import { createClient } from "redis";
 
-const client = createClient({ url: process.env.REDIS_URL });
-await client.connect();
-
-export async function getJobRequestQuota(userId: string) {
-  const monthlyRequestQuota = (await hasPolarAppBenefit(userId)) ? 50 : 1;
+export async function getJobRequestQuota(userId: string, isAnonymous: boolean) {
+  const monthlyRequestQuota =
+    !isAnonymous && (await hasPolarAppBenefit(userId)) ? 50 : 1;
 
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -23,9 +21,18 @@ export async function getJobRequestQuota(userId: string) {
   return Math.max(0, monthlyRequestQuota - jobRequests);
 }
 
+function buildHasPolarAppBenefitRedisKey(userId: string) {
+  return `${userId}:polar-app-benefit`;
+}
+
+export async function invalidateHasPolarAppBenefit(userId: string) {
+  await redisClient.del(buildHasPolarAppBenefitRedisKey(userId));
+}
+
 export async function hasPolarAppBenefit(userId: string) {
-  const key = `${userId}:polar-app-benefit`;
-  const polarAppBenefitEntry = await client.get(key);
+  const polarAppBenefitEntry = await redisClient.get(
+    buildHasPolarAppBenefitRedisKey(userId)
+  );
   if (polarAppBenefitEntry != null) {
     return polarAppBenefitEntry === "true";
   }
@@ -36,6 +43,10 @@ export async function hasPolarAppBenefit(userId: string) {
     (benefit) => benefit.benefitId === process.env.POLAR_APP_BENEFIT_ID
   );
   //5 minute TTL
-  client.setEx(key, 5 * 60, hasPolarAppBenefit ? "true" : "false");
+  redisClient.setEx(
+    buildHasPolarAppBenefitRedisKey(userId),
+    5 * 60,
+    hasPolarAppBenefit ? "true" : "false"
+  );
   return hasPolarAppBenefit;
 }

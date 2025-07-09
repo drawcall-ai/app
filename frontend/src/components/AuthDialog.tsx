@@ -4,19 +4,21 @@ import { trpcReact } from "../TRPCProvider";
 import { GithubIcon } from "lucide-react";
 
 interface AuthDialogProps {
-  isOpen: boolean;
+  callbackURL: string;
   onClose: () => void;
 }
 
-export const AuthDialog: React.FC<AuthDialogProps> = ({ isOpen, onClose }) => {
+export const AuthDialog: React.FC<AuthDialogProps> = ({
+  callbackURL,
+  onClose,
+}) => {
   const utils = trpcReact.useUtils();
-  if (!isOpen) return null;
 
   const handleSocialSignIn = async (provider: "github" | "google") => {
     try {
       await signIn.social({
         provider,
-        callbackURL: window.location.href,
+        callbackURL,
       });
       await utils.invalidate();
 
