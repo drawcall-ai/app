@@ -59,31 +59,36 @@ const iconMap = {
 };
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
+  const [loginCallbackUrl] = useQueryState("loginCallbackUrl");
   const { data: session, isPending } = useSession();
-  const [isInitializing, setIsInitializing] = useState(true);
   const utils = trpcReact.useUtils();
 
   useEffect(() => {
     const initializeAuth = async () => {
-      try {
-        // If user is not logged in, sign them in anonymously
-        if (!session?.user && !isPending) {
-          await authClient.signIn.anonymous();
-          authClient.checkout({});
-          await utils.invalidate();
+      if (loginCallbackUrl)
+        try {
+          // If user is not logged in, sign them in anonymously
+          if (session?.user == null && !isPending && loginCallbackUrl == null) {
+            await authClient.signIn.anonymous();
+            await utils.invalidate();
+          }
+        } catch (error) {
+          console.error(
+            "Failed to initialize anonymous authentication:",
+            error
+          );
         }
-      } catch (error) {
-        console.error("Failed to initialize anonymous authentication:", error);
-      } finally {
-        setIsInitializing(false);
-      }
     };
 
     initializeAuth();
   }, [session, isPending]);
 
+  if (loginCallbackUrl != null && session?.user == null) {
+    return <AuthDialog callbackURL={loginCallbackUrl} onClose={undefined} />;
+  }
+
   // Show loading state while checking/initializing authentication
-  if (isPending || isInitializing || !session?.user) {
+  if (isPending || session?.user == null) {
     return (
       <div className="fixed inset-0 bg-[#333] flex items-center justify-center">
         <div className="text-white text-center">
@@ -119,9 +124,8 @@ function MainApp() {
   const drawerRef = useRef<HTMLDivElement>(null);
   const inputElementRef = useRef<HTMLInputElement>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [authDialogState, setAuthDialogState] = useState<
-    { callbackURL: string } | undefined
-  >(undefined);
+  const [loginCallbackUrl, setLoginCallbackUrl] =
+    useQueryState("loginCallbackUrl");
   const utils = trpcReact.useUtils();
   const [jobStatus, setJobStatus] = useState<
     "error" | "canceled" | "finished" | "running" | undefined
@@ -209,16 +213,14 @@ function MainApp() {
       {/* Auth UI Components */}
       <div className="absolute top-4 right-4 z-50">
         <UserProfile
-          onAuthClick={() =>
-            setAuthDialogState({ callbackURL: window.location.href })
-          }
+          onAuthClick={() => setLoginCallbackUrl(window.location.href)}
         />
       </div>
 
-      {authDialogState != null && (
+      {loginCallbackUrl != null && (
         <AuthDialog
-          callbackURL={authDialogState.callbackURL}
-          onClose={() => setAuthDialogState(undefined)}
+          callbackURL={loginCallbackUrl}
+          onClose={() => setLoginCallbackUrl(null)}
         />
       )}
 
@@ -340,7 +342,7 @@ function MainApp() {
       >
         {/* Quota Notice */}
         {customerStatus != null && (
-          <div className="flex absolute left-1/2 -translate-x-1/2 font-normal opacity-50 -top-6 items-center w-full justify-center gap-2 text-sm mb-2 flex flex-row gap-2">
+          <div className="flex absolute left-1/2 -translate-x-1/2 font-normal opacity-50 -top-6 items-center w-full justify-center gap-2 text-sm mb-2 flex-row">
             {customerStatus.requestQuota > 0 ? (
               <span className="text-white/70">
                 {customerStatus.requestQuota} requests remaining this month
@@ -362,7 +364,7 @@ function MainApp() {
                   );
                   url.searchParams.set("successUrl", window.location.href);
                   if (session.data.user.isAnonymous) {
-                    setAuthDialogState({ callbackURL: url.href });
+                    setLoginCallbackUrl(url.href);
                   } else {
                     window.location.href = url.href;
                   }

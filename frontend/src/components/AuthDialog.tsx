@@ -5,24 +5,19 @@ import { GithubIcon } from "lucide-react";
 
 interface AuthDialogProps {
   callbackURL: string;
-  onClose: () => void;
+  onClose?: () => void;
 }
 
 export const AuthDialog: React.FC<AuthDialogProps> = ({
   callbackURL,
   onClose,
 }) => {
-  const utils = trpcReact.useUtils();
-
   const handleSocialSignIn = async (provider: "github" | "google") => {
     try {
       await signIn.social({
         provider,
         callbackURL,
       });
-      await utils.invalidate();
-
-      onClose();
     } catch (error) {
       console.error(`${provider} sign-in error:`, error);
     }
@@ -33,12 +28,14 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({
       <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-gray-900">Sign In</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 cursor-pointer hover:text-gray-600"
-          >
-            ✕
-          </button>
+          {onClose != null && (
+            <button
+              onClick={onClose}
+              className="text-gray-400 cursor-pointer hover:text-gray-600"
+            >
+              ✕
+            </button>
+          )}
         </div>
 
         <div className="space-y-4">
