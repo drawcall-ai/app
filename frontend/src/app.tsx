@@ -65,19 +65,15 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const initializeAuth = async () => {
-      if (loginCallbackUrl)
-        try {
-          // If user is not logged in, sign them in anonymously
-          if (session?.user == null && !isPending && loginCallbackUrl == null) {
-            await authClient.signIn.anonymous();
-            await utils.invalidate();
-          }
-        } catch (error) {
-          console.error(
-            "Failed to initialize anonymous authentication:",
-            error
-          );
+      try {
+        // If user is not logged in, sign them in anonymously
+        if (session?.user == null && !isPending && loginCallbackUrl == null) {
+          await authClient.signIn.anonymous();
+          await utils.invalidate();
         }
+      } catch (error) {
+        console.error("Failed to initialize anonymous authentication:", error);
+      }
     };
 
     initializeAuth();
