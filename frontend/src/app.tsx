@@ -83,7 +83,18 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     initializeAuth();
   }, [session, isPending]);
 
-  if (loginCallbackUrl != null && session?.user == null) {
+  const isAnonymous = session?.user.isAnonymous ?? true;
+
+  useEffect(() => {
+    if (!isAnonymous && loginCallbackUrl != null) {
+      location.href = loginCallbackUrl;
+    }
+  }, [loginCallbackUrl, isAnonymous]);
+
+  if (loginCallbackUrl != null) {
+    if (!isAnonymous) {
+      return null;
+    }
     return <AuthDialog callbackURL={loginCallbackUrl} onClose={undefined} />;
   }
 
