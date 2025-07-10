@@ -12,7 +12,7 @@ import { rerouteToMachine } from "../fly.js";
 import { FastifyReply } from "fastify";
 import { createProtectedProcedure } from "../lib/protected-procedure.js";
 import { TRPCError } from "@trpc/server";
-import { getJobRequestQuota } from "../utils.js";
+import { getJobRequestQuota, hasPolarAppBenefit } from "../utils.js";
 
 const jobStreamMap = new Map<string, DurableStream>();
 
@@ -147,11 +147,11 @@ export function buildUikitRouter(trpc: TRPC, abortSignal: AbortSignal) {
         })
       )
       .mutation(async ({ input, ctx }) => {
-        // Count the number of jobs created by the user this month
-        const quota = await getJobRequestQuota(
+        const hasAppBenefit = await hasPolarAppBenefit(
           ctx.user.id,
           ctx.user.isAnonymous!
         );
+        const quota = await getJobRequestQuota(ctx.user.id, hasAppBenefit);
         if (quota === 0) {
           throw new TRPCError({
             code: "FORBIDDEN",
