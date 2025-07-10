@@ -461,24 +461,30 @@ function Result({ id }: { id: string }) {
     if (status != "idle" || stringData == null || stringData.length === 0) {
       return undefined;
     }
-    const data = JSON.parse(stringData);
-    // Use dynamic data if available, otherwise fall back to default content
-    const uikitData = data.uikitmlJson;
-    if (!uikitData) return null;
+    try {
+      const data = JSON.parse(stringData);
+      // Use dynamic data if available, otherwise fall back to default content
+      const uikitData = data.uikitmlJson;
+      if (!uikitData) return null;
 
-    const root = interpret({
-      element: uikitData as any,
-      classes: {},
-    }) as any as Container;
-    root.setProperties({
-      fontFamilies,
-      fontFamily: data.typography,
-      "*": {
+      const root = interpret({
+        element: uikitData as any,
+        classes: {},
+      }) as any as Container;
+      root.setProperties({
+        fontFamilies,
+        fontFamily: data.typography,
+        "*": {
+          renderOrder: 100,
+        },
         renderOrder: 100,
-      },
-      renderOrder: 100,
-    });
-    return root;
+      });
+      return root;
+    } catch (e) {
+      //TODO: show error to user
+      console.error(e);
+      return undefined;
+    }
   }, [stringData, status]);
 
   useFrame((_, delta) => {
