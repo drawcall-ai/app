@@ -2,14 +2,15 @@
   "name": "backend",
   "type": "module",
   "files": [
-    "dist"
+    "dist",
+    ".env.production"
   ],
   "scripts": {
-    "db:push": "dotenvx run -f .env -- prisma db push --schema ./src/db/schema.prisma",
-    "dev": "dotenvx run -f .env -- node --watch --loader ts-node/esm ./src/index.ts",
-    "dev:start": "dotenvx run -f .env -- node ./dist/index.js",
+    "db:push": "dotenvx run -f .env.development.secret -f .env.development -- prisma db push --schema ./src/db/schema.prisma",
+    "dev": "dotenvx run -f .env.development.secret -f .env.development -- node --watch --loader ts-node/esm ./src/index.ts",
+    "dev:start": "dotenvx run -f .env.development.secret -f .env.development -- node ./dist/index.js",
     "build": "tsc",
-    "start": "node dist/index.js",
+    "start": "dotenvx run -f .env.production -- node dist/index.js",
     "generate": "prisma generate --schema ./src/db/schema.prisma",
     "dev:webhook": "ngrok http --url=roughly-genuine-leopard.ngrok-free.app 8080"
   },
@@ -25,10 +26,10 @@
     "prisma": "^6.11.0",
     "prisma-client": "^0.0.0",
     "redis": "^5.6.0",
-    "zod": "^3.22.4"
+    "zod": "^3.22.4",
+    "@dotenvx/dotenvx": "^1.39.0"
   },
   "devDependencies": {
-    "@dotenvx/dotenvx": "^1.39.0",
     "ts-node": "^10.9.2"
   }
 }
