@@ -24,6 +24,7 @@ import * as fontFamilies from "@pmndrs/msdfonts";
 import { skipToken } from "@tanstack/react-query";
 import { AuthDialog } from "./components/AuthDialog";
 import { UserProfile } from "./components/UserProfile";
+import { PromptDropdowns } from "./components/PromptDropdowns";
 import { authClient, useSession } from "./auth-client";
 
 const materials: Array<MeshTransmissionMaterial> = [];
@@ -111,6 +112,102 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function buildRequest(
+  contentPrompt: string,
+  selections: {
+    space: string;
+    vibe: string;
+    material: string;
+    arrangement: string;
+  }
+) {
+  let designGuidelines = "";
+  let allowPanelMaterials = false;
+
+  // 3D Design Guidelines based on arrangement
+  if (selections.arrangement !== "billboard") {
+    designGuidelines +=
+      "\n## Panel Arrangement: Make individual panels floating in 3D by omitting the background colors on the root <div> tags and only use a background color on individual panels.";
+  }
+
+  // Vibe guidelines (if not ai-vibe)
+  if (selections.vibe !== "ai") {
+    designGuidelines += "\n## Vibe:\n";
+
+    switch (selections.vibe) {
+      case "professional":
+        designGuidelines +=
+          "The vibe should be Modern, Professional, Clean, Sleek, and Corporate";
+        break;
+      case "playful":
+        designGuidelines +=
+          "The vibe should be Friendly, Playful, Approachable, and Whimsical";
+        break;
+      case "elegant":
+        designGuidelines +=
+          "The vibe should be Elegant, Luxurious, Sophisticated, and Premium";
+        break;
+      case "artistic":
+        designGuidelines +=
+          "The vibe should be Bold, Artistic, Brutalist, and Expressive";
+        break;
+      case "natural":
+        designGuidelines +=
+          "The vibe should be Calm, Natural, Serene, Mindful, and Organic";
+        break;
+      case "functional":
+        designGuidelines +=
+          "The vibe should be Utilitarian, Functional, and No-frills";
+        break;
+      default:
+        designGuidelines +=
+          "The vibe should be Utilitarian, Functional, and No-frills";
+    }
+  }
+
+  // Material guidelines (if not flat-materials)
+  if (selections.material !== "flat") {
+    allowPanelMaterials = true;
+    designGuidelines += "\n## 3D Materials:\n";
+    designGuidelines +=
+      "Sparingly use materials and border-bending on major visual elements like panel backgrounds to highlight dimensionality.";
+
+    // Special guidelines for glass and mixed materials
+    if (selections.material === "mixed" || selections.material === "glass") {
+      designGuidelines +=
+        "\nGlass materials should use background colors with less opacity, e.g. bg-background/60.";
+    }
+  }
+
+  // Spacing guidelines (if not ai-spacing)
+  if (selections.space !== "ai") {
+    designGuidelines += "\n## Spacing:\n";
+
+    switch (selections.space) {
+      case "spacious":
+        designGuidelines += "Use Spacious spacing";
+        break;
+      case "comfortable":
+        designGuidelines += "Use Comfortable spacing";
+        break;
+      case "tight":
+        designGuidelines += "Use Tight spacing";
+        break;
+      default:
+        designGuidelines += "Use Comfortable spacing";
+    }
+  }
+
+  return {
+    prompt: `# UI Content Description:\n${contentPrompt}${
+      designGuidelines.length > 0
+        ? `\n\n# Design Description:${designGuidelines}`
+        : ""
+    }`,
+    allowPanelMaterials,
+  };
+}
+
 export function App() {
   return (
     <AuthGuard>
@@ -129,7 +226,7 @@ function MainApp() {
   const newRef = useRef<HTMLDivElement>(null);
   const drawerButtonRef = useRef<HTMLDivElement>(null);
   const drawerRef = useRef<HTMLDivElement>(null);
-  const inputElementRef = useRef<HTMLInputElement>(null);
+  const contentInputElementRef = useRef<HTMLInputElement>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [loginCallbackUrl, setLoginCallbackUrl] =
     useQueryState("loginCallbackUrl");
@@ -137,6 +234,12 @@ function MainApp() {
   const [jobStatus, setJobStatus] = useState<
     "error" | "canceled" | "finished" | "running" | undefined
   >(undefined);
+  const [promptBuilderSelections, setPromptBuilderSelections] = useState({
+    space: "ai",
+    vibe: "ai",
+    material: "flat",
+    arrangement: "billboard",
+  });
   trpcReact.jobs.status.useSubscription(
     jobId == null ? skipToken : { id: jobId },
     {
@@ -152,8 +255,8 @@ function MainApp() {
     onSuccess: (prompt, input) => {
       if (jobId === input.id) {
         setJobId(null);
-        if (prompt != null && inputElementRef.current != null) {
-          inputElementRef.current.value = prompt;
+        if (prompt != null && contentInputElementRef.current != null) {
+          contentInputElementRef.current.value = prompt;
         }
       }
       utils.jobs.all.invalidate();
@@ -166,8 +269,8 @@ function MainApp() {
     onSuccess: (data) => {
       utils.customer.status.invalidate();
       setJobId(data.id.toString());
-      if (inputElementRef.current != null) {
-        inputElementRef.current.value = "";
+      if (contentInputElementRef.current != null) {
+        contentInputElementRef.current.value = "";
       }
       utils.jobs.all.invalidate();
     },
@@ -343,13 +446,13 @@ function MainApp() {
       </div>
 
       <div
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-[4px] flex flex-col items-center text-white text-xl font-[inter] font-medium"
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-1 mt-3 flex flex-col gap-1 items-center text-white text-lg font-[inter] font-medium"
         ref={inputRef}
         style={{ transform: "scale(0)" }}
       >
         {/* Quota Notice */}
         {customerStatus != null && (
-          <div className="flex absolute left-1/2 -translate-x-1/2 font-normal opacity-50 -top-6 items-center w-full justify-center gap-2 text-sm mb-2 flex-row">
+          <div className="flex absolute left-1/2 -translate-x-1/2 font-normal opacity-50 -top-10 items-center w-full justify-center gap-2 text-sm mb-2 flex-row">
             {customerStatus.requestQuota > 0 ? (
               <span className="text-white/70">
                 {customerStatus.requestQuota} requests remaining this month
@@ -384,23 +487,41 @@ function MainApp() {
           </div>
         )}
 
-        <div className="flex w-full flex-row items-center gap-6">
-          <SparklesIcon className="w-6 h-6 ml-6 shrink-0" />
+        <PromptDropdowns
+          onSelectionChange={setPromptBuilderSelections}
+          state={promptBuilderSelections}
+          disabled={
+            (isMobile && drawerOpen) ||
+            jobId != null ||
+            (customerStatus?.requestQuota ?? 0) === 0
+          }
+        />
+
+        <div className="flex w-full flex-row items-center gap-6 border-t-2 border-white/5">
+          <SparklesIcon className="w-5 h-5 ml-5 shrink-0" />
           <input
-            onKeyDown={(e) =>
-              e.key === "Enter" &&
-              inputElementRef.current != null &&
-              inputElementRef.current.value.length > 0 &&
-              (customerStatus?.requestQuota ?? 0) > 0 &&
-              createJob({ prompt: inputElementRef.current.value })
-            }
+            onKeyDown={(e) => {
+              if (
+                e.key === "Enter" &&
+                contentInputElementRef.current != null &&
+                contentInputElementRef.current.value.length > 0 &&
+                (customerStatus?.requestQuota ?? 0) > 0
+              ) {
+                const contentPrompt = contentInputElementRef.current.value;
+                const request = buildRequest(
+                  contentPrompt,
+                  promptBuilderSelections
+                );
+                createJob(request);
+              }
+            }}
             disabled={
               (isMobile && drawerOpen) ||
               jobId != null ||
               (customerStatus?.requestQuota ?? 0) === 0
             }
-            ref={inputElementRef}
-            placeholder="Describe the 3D user interface"
+            ref={contentInputElementRef}
+            placeholder="Describe the contents of the 3D user interface ..."
             className="outline-0 grow shrink basis-0 min-w-0 text-ellipsis"
           ></input>
           <button
@@ -409,12 +530,20 @@ function MainApp() {
               jobId != null ||
               (customerStatus?.requestQuota ?? 0) === 0
             }
-            onClick={() =>
-              inputElementRef.current != null &&
-              inputElementRef.current.value.length > 0 &&
-              (customerStatus?.requestQuota ?? 0) > 0 &&
-              createJob({ prompt: inputElementRef.current.value })
-            }
+            onClick={() => {
+              if (
+                contentInputElementRef.current != null &&
+                contentInputElementRef.current.value.length > 0 &&
+                (customerStatus?.requestQuota ?? 0) > 0
+              ) {
+                const basePrompt = contentInputElementRef.current.value;
+                const request = buildRequest(
+                  basePrompt,
+                  promptBuilderSelections
+                );
+                createJob(request);
+              }
+            }}
             className={
               ((customerStatus?.requestQuota ?? 0) > 0
                 ? "bg-black/0 hover:bg-black/20 focus:bg-black/40 hover:scale-100 cursor-pointer"
@@ -422,7 +551,7 @@ function MainApp() {
               "outline-0 outline-white/10 scale-90 transition-all rounded-full w-[56px] h-[56px] flex items-center justify-center"
             }
           >
-            <ArrowUpIcon className="w-6 h-6 shrink-0" />
+            <ArrowUpIcon className="w-5 h-5 shrink-0" />
           </button>
         </div>
       </div>
@@ -553,7 +682,7 @@ function UserInterface({
   const drawerBackgroundOpacity = useSpringSignal(drawerOpen ? 1 : 0, 0.007);
 
   const promptTranslateY = useSpringSignal(
-    drawerOpen && isMobile ? 160 : promptOpen ? 0 : 84,
+    drawerOpen && isMobile ? 224 : promptOpen ? 0 : 164,
     0.007
   );
 
@@ -745,7 +874,7 @@ function UserInterface({
       borderRadius: 32,
       borderWidth: 4,
       borderBend: 0.5,
-      height: 64,
+      height: 148,
       backgroundColor: "#aaa",
       transformTranslateY: promptTranslateY,
     });

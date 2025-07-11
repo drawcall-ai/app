@@ -8,6 +8,7 @@
     "@pmndrs/vanilla": "^1.21.0",
     "@polar-sh/better-auth": "^1.0.4",
     "@preact/signals": "^2.2.1",
+    "@radix-ui/react-select": "^2.2.5",
     "@react-three/drei": "^10.4.2",
     "@react-three/fiber": "^9.1.4",
     "@tanstack/react-query": "^5.81.5",

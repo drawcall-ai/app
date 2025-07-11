@@ -27,13 +27,14 @@ model Job {
 }
 
 model UikitJob {
-    id        String  @id @default(cuid())
-    Job       Job?
-    machineId String?
-    output    String?
-    error     String?
-    canceled  Boolean @default(false)
-    prompt    String
+    id                  String   @id @default(cuid())
+    Job                 Job?
+    machineId           String?
+    output              String?
+    error               String?
+    canceled            Boolean  @default(false)
+    prompt              String
+    allowPanelMaterials Boolean?
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt

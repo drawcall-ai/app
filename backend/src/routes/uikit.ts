@@ -144,6 +144,7 @@ export function buildUikitRouter(trpc: TRPC, abortSignal: AbortSignal) {
       .input(
         z.object({
           prompt: z.string(),
+          allowPanelMaterials: z.boolean().optional(),
         })
       )
       .mutation(async ({ input, ctx }) => {
@@ -162,6 +163,7 @@ export function buildUikitRouter(trpc: TRPC, abortSignal: AbortSignal) {
           data: {
             machineId: process.env.FLY_MACHINE_ID,
             prompt: input.prompt,
+            allowPanelMaterials: input.allowPanelMaterials,
           },
           select: { id: true },
         });
@@ -174,7 +176,13 @@ export function buildUikitRouter(trpc: TRPC, abortSignal: AbortSignal) {
             uikitJob: { select: { prompt: true, id: true } },
           },
         });
-        requestUikit(job.id, job.uikitJob!.id, input.prompt, abortSignal);
+        requestUikit(
+          job.id,
+          job.uikitJob!.id,
+          input.prompt,
+          input.allowPanelMaterials,
+          abortSignal
+        );
         return job;
       }),
   });
@@ -184,6 +192,7 @@ async function requestUikit(
   jobId: string,
   uikitJobId: string,
   prompt: string,
+  allowPanelMaterials: boolean | undefined,
   abortSignal: AbortSignal
 ) {
   const abortController = new AbortController();
@@ -191,18 +200,22 @@ async function requestUikit(
   jobStreamMap.set(jobId, stream);
   try {
     // Make request to the drawcall.ai API
-    const response = await fetch(
-      `https://api.beta.drawcall.ai/uikit/v1?prompt=${encodeURIComponent(
-        prompt
-      )}`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        signal: AbortSignal.any([abortController.signal, abortSignal]),
-      }
-    );
+    const url = new URL("/uikit/v1", "https://api.beta.drawcall.ai");
+    url.searchParams.set("prompt", prompt);
+    if (allowPanelMaterials) {
+      url.searchParams.set(
+        "allowPanelMaterials",
+        allowPanelMaterials ? "true" : "false"
+      );
+    }
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      signal: AbortSignal.any([abortController.signal, abortSignal]),
+    });
 
     if (!response.ok) {
       throw new Error(
