@@ -611,8 +611,8 @@ function Feedback({ jobId }: { jobId: string }) {
   return (
     <div className="grow flex flex-row min-w-0">
       {data == null && (
-        <div className="flex items-center justify-center py-2">
-          <LoaderIcon className="w-5 h-5 animate-spin" />
+        <div className="flex grow items-center justify-center py-2">
+          <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto"></div>
         </div>
       )}
       {data != null && data.type == null && (
