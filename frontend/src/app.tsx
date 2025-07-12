@@ -127,7 +127,7 @@ function buildRequest(
   // 3D Design Guidelines based on arrangement
   if (selections.arrangement !== "billboard") {
     designGuidelines +=
-      "\n## Panel Arrangement: Make individual panels floating in 3D by omitting the background colors on the root <div> tags and only use a background color on individual panels.";
+      "\n## Panel Arrangement: Make individual panels floating in 3D by omitting the background colors on the root <div> tag while using a background color on individual panels.\n IMPORTANT: Omit background colors on the root element!.";
   }
 
   // Vibe guidelines (if not ai-vibe)
