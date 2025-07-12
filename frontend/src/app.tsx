@@ -10,10 +10,13 @@ import {
   ArrowUpIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  LoaderIcon,
   MapIcon,
   MenuIcon,
   PlusIcon,
   SparklesIcon,
+  ThumbsDownIcon,
+  ThumbsUpIcon,
   XIcon,
 } from "lucide-react";
 import { damp } from "three/src/math/MathUtils.js";
@@ -26,6 +29,39 @@ import { AuthDialog } from "./components/AuthDialog";
 import { UserProfile } from "./components/UserProfile";
 import { PromptDropdowns } from "./components/PromptDropdowns";
 import { authClient, useSession } from "./auth-client";
+
+interface IconButtonProps {
+  onClick?: () => void;
+  disabled?: boolean;
+  children: React.ReactNode;
+  className?: string;
+  variant?: "default" | "ghost";
+}
+
+function IconButton({
+  onClick,
+  disabled = false,
+  children,
+  className = "",
+  variant = "default",
+}: IconButtonProps) {
+  const baseClasses =
+    "flex justify-center outline-0 items-center cursor-pointer transition-all";
+
+  const disabledClasses = disabled ? "opacity-50 cursor-not-allowed" : "";
+
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`shrink-0 ${baseClasses} ${
+        variant === "default" ? "bg-white/20" : ""
+      } hover:bg-white/40 focus:bg-white/60 rounded-full w-[52px] h-[52px] ${disabledClasses} ${className}`}
+    >
+      {children}
+    </button>
+  );
+}
 
 const materials: Array<MeshTransmissionMaterial> = [];
 
@@ -222,8 +258,7 @@ function MainApp() {
   const [pageString, setPage] = useQueryState("page", { defaultValue: "1" });
   const page = parseInt(pageString);
   const inputRef = useRef<HTMLDivElement>(null);
-  const cancelRef = useRef<HTMLDivElement>(null);
-  const newRef = useRef<HTMLDivElement>(null);
+  const actionBarRef = useRef<HTMLDivElement>(null);
   const drawerButtonRef = useRef<HTMLDivElement>(null);
   const drawerRef = useRef<HTMLDivElement>(null);
   const contentInputElementRef = useRef<HTMLInputElement>(null);
@@ -305,13 +340,11 @@ function MainApp() {
         />
         <UserInterface
           inputRef={inputRef}
-          cancelRef={cancelRef}
+          actionBarRef={actionBarRef}
           drawerButtonRef={drawerButtonRef}
           drawerRef={drawerRef}
-          newRef={newRef}
           promptOpen={jobId == null}
           drawerOpen={drawerOpen}
-          cancelEnabled={jobStatus === "running"}
           isMobile={isMobile}
         />
         <Environment environmentIntensity={1.0} preset="studio" />
@@ -352,7 +385,7 @@ function MainApp() {
                   setJobId(id.toString());
                 }}
                 key={id}
-                className={`cursor-pointer flex items-center gap-4 px-4 py-3 outline-0 rounded-lg transition-all hover:scale-[1.02] ${
+                className={`cursor-pointer flex items-center gap-2 px-4 py-3 outline-0 rounded-lg transition-all hover:scale-[1.02] ${
                   isSelected
                     ? "bg-white/20 hover:bg-white/25 focus:bg-white/30"
                     : "hover:bg-black/40 focus:bg-black/40"
@@ -418,31 +451,24 @@ function MainApp() {
       </div>
 
       <div
-        className="absolute -translate-x-1/2 top-1/2 left-1/2 -translate-y-1/2 p-[4px] text-white text-xl font-[inter] font-medium"
-        ref={cancelRef}
+        className="absolute -translate-x-1/2 top-1/2 left-1/2 -translate-y-1/2 text-white text-md font-[inter] font-medium flex flex-row gap-2 px-2 items-center justify-between"
+        ref={actionBarRef}
         style={{ transform: "scale(0)" }}
       >
-        <button
-          disabled={jobId == null || jobStatus != "running"}
-          onClick={() => jobId != null && deleteJob({ id: jobId })}
-          className="w-full h-full flex justify-center outline-0 items-center cursor-pointer bg-black/0 hover:bg-black/20 focus:bg-black/40 hover:scale-100 scale-90 transition-all rounded-full"
-        >
-          <XIcon className="w-6 h-6" />
-        </button>
-      </div>
-
-      <div
-        className="absolute -translate-x-1/2 top-1/2 left-1/2 -translate-y-1/2 p-[4px] text-white text-xl font-[inter] font-medium"
-        ref={newRef}
-        style={{ transform: "scale(0)" }}
-      >
-        <button
+        <IconButton
           disabled={(isMobile && drawerOpen) || jobId == null}
           onClick={() => jobId != null && setJobId(null)}
-          className="w-full h-full flex justify-center outline-0 items-center cursor-pointer bg-black/0 hover:bg-black/20 focus:bg-black/40 hover:scale-100 scale-90 transition-all rounded-full"
         >
           <PlusIcon className="w-7 h-7" />
-        </button>
+        </IconButton>
+        {jobStatus === "running" && (
+          <IconButton onClick={() => jobId != null && deleteJob({ id: jobId })}>
+            <XIcon className="w-6 h-6" />
+          </IconButton>
+        )}
+        {jobStatus === "finished" && jobId != null && (
+          <Feedback jobId={jobId} />
+        )}
       </div>
 
       <div
@@ -458,12 +484,13 @@ function MainApp() {
                 {customerStatus.requestQuota} requests remaining this month
               </span>
             ) : (
-              <span className="text-red-400 font-medium opacity-100">
+              <span className="font-medium opacity-100">
                 No requests remaining this month.
               </span>
             )}
             {!customerStatus.hasAppBenefit && (
               <button
+                disabled={isMobile && drawerOpen}
                 onClick={async () => {
                   if (session.data == null) {
                     return;
@@ -524,12 +551,13 @@ function MainApp() {
             placeholder="Describe the contents of the 3D user interface ..."
             className="outline-0 grow shrink basis-0 min-w-0 text-ellipsis"
           ></input>
-          <button
+          <IconButton
             disabled={
               (isMobile && drawerOpen) ||
               jobId != null ||
               (customerStatus?.requestQuota ?? 0) === 0
             }
+            variant="ghost"
             onClick={() => {
               if (
                 contentInputElementRef.current != null &&
@@ -544,18 +572,81 @@ function MainApp() {
                 createJob(request);
               }
             }}
-            className={
-              ((customerStatus?.requestQuota ?? 0) > 0
-                ? "bg-black/0 hover:bg-black/20 focus:bg-black/40 hover:scale-100 cursor-pointer"
-                : "") +
-              "outline-0 outline-white/10 scale-90 transition-all rounded-full w-[56px] h-[56px] flex items-center justify-center"
-            }
+            className="outline-white/10"
           >
             <ArrowUpIcon className="w-5 h-5 shrink-0" />
-          </button>
+          </IconButton>
         </div>
       </div>
     </>
+  );
+}
+
+function Feedback({ jobId }: { jobId: string }) {
+  const utils = trpcReact.useUtils();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const { data } = trpcReact.jobs.feedback.useQuery({ id: jobId });
+  const { mutate } = trpcReact.jobs.setFeedback.useMutation({
+    onError() {
+      //TODO: toast
+    },
+    onSuccess(data, variables, context) {
+      utils.jobs.feedback.invalidate();
+    },
+  });
+
+  const submit = () => {
+    const text = (inputRef.current!.value ?? "").trim();
+    if (text.length === 0) {
+      return;
+    }
+    mutate({
+      id: jobId,
+      type: "Negative",
+      text,
+    });
+    inputRef.current!.value = "";
+  };
+
+  return (
+    <div className="grow flex flex-row min-w-0">
+      {data == null && (
+        <div className="flex items-center justify-center py-2">
+          <LoaderIcon className="w-5 h-5 animate-spin" />
+        </div>
+      )}
+      {data != null && data.type == null && (
+        <>
+          <div className="grow" />
+          <IconButton onClick={() => mutate({ id: jobId, type: "Positive" })}>
+            <ThumbsUpIcon className="w-5 h-5" />
+          </IconButton>
+          <div className="grow" />
+          <IconButton onClick={() => mutate({ id: jobId, type: "Negative" })}>
+            <ThumbsDownIcon className="w-5 h-5" />
+          </IconButton>
+        </>
+      )}
+      {data?.type === "Negative" && data.text == null && (
+        <>
+          <input
+            type="text"
+            ref={inputRef}
+            placeholder="What could be improved?"
+            className="py-2 basis-0 grow text-white placeholder-white/50 outline-none min-w-0"
+            onKeyDown={(e) => e.key === "Enter" && submit()}
+          />
+          <IconButton onClick={() => submit()}>
+            <ArrowUpIcon />
+          </IconButton>
+        </>
+      )}
+      {(data?.type === "Positive" || data?.text != null) && (
+        <div className="flex items-center justify-center grow">
+          <span className="text-sm">Thank you for your feedback!</span>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -656,23 +747,19 @@ const negZAxis = new Vector3(0, 0, -1);
 
 function UserInterface({
   inputRef,
-  newRef,
-  cancelRef,
+  actionBarRef,
   promptOpen,
   drawerOpen,
   drawerButtonRef,
   drawerRef,
-  cancelEnabled,
   isMobile,
 }: {
   inputRef: RefObject<HTMLDivElement | null>;
-  cancelRef: RefObject<HTMLDivElement | null>;
-  newRef: RefObject<HTMLDivElement | null>;
+  actionBarRef: RefObject<HTMLDivElement | null>;
   drawerButtonRef: RefObject<HTMLDivElement | null>;
   drawerRef: RefObject<HTMLDivElement | null>;
   promptOpen: boolean;
   drawerOpen: boolean;
-  cancelEnabled: boolean;
   isMobile: boolean;
 }) {
   const renderer = useThree((state) => state.gl);
@@ -682,16 +769,11 @@ function UserInterface({
   const drawerBackgroundOpacity = useSpringSignal(drawerOpen ? 1 : 0, 0.007);
 
   const promptTranslateY = useSpringSignal(
-    drawerOpen && isMobile ? 224 : promptOpen ? 0 : 164,
+    drawerOpen && isMobile ? 260 : promptOpen ? 0 : 164,
     0.007
   );
 
-  const cancelOpacity = useSpringSignal(
-    cancelEnabled && !promptOpen ? 1 : 0,
-    0.007
-  );
-  const buttonTranslateX = useSpringSignal(cancelEnabled ? 0 : 40, 0.007);
-  const newOpacity = useSpringSignal(promptOpen ? 0 : 1, 0.007);
+  const actionBarOpacity = useSpringSignal(!promptOpen ? 1 : 0, 0.007);
   const drawerButtonBackgroundOpacity = useSpringSignal(
     drawerOpen ? 0 : 1,
     0.007
@@ -737,22 +819,12 @@ function UserInterface({
     state.gl.toneMapping = oldTone;
   });
   useEffect(() => {
-    const cancel = cancelRef.current;
-    if (cancel == null) {
+    const actionBar = actionBarRef.current;
+    if (actionBar == null) {
       return;
     }
     return effect(
-      () => void (cancel.style.opacity = cancelOpacity.value.toString())
-    );
-  });
-
-  useEffect(() => {
-    const newElement = newRef.current;
-    if (newElement == null) {
-      return;
-    }
-    return effect(
-      () => void (newElement.style.opacity = newOpacity.value.toString())
+      () => void (actionBar.style.opacity = actionBarOpacity.value.toString())
     );
   });
   useEffect(() => {
@@ -767,16 +839,14 @@ function UserInterface({
   });
   useEffect(() => {
     const input = inputRef.current;
-    const newBtn = newRef.current;
-    const cancel = cancelRef.current;
+    const actionBar = actionBarRef.current;
     const drawerButton = drawerButtonRef.current;
     const drawer = drawerRef.current;
     if (
       input == null ||
-      cancel == null ||
+      actionBar == null ||
       drawerButton == null ||
-      drawer == null ||
-      newBtn == null
+      drawer == null
     ) {
       return;
     }
@@ -838,36 +908,18 @@ function UserInterface({
       backgroundColor: "#aaa",
     });
     drawerContainer.add(drawerButtonContainer);
-    const buttonContainer = new Container({
-      flexDirection: "row",
-      gap: 16,
-      transformTranslateX: buttonTranslateX,
-    });
-    promptContainer.add(buttonContainer);
-    const newContainer = new Container({
+    const actionBarContainer = new Container({
       panelMaterialClass: GlassMaterial,
-      width: 64,
+      width: 320,
       borderRadius: 32,
       borderWidth: 4,
       borderBend: 0.5,
       height: 64,
       backgroundColor: "#aaa",
-      opacity: newOpacity,
+      opacity: actionBarOpacity,
       transformTranslateY: promptTranslateY,
     });
-    buttonContainer.add(newContainer);
-    const cancelContainer = new Container({
-      panelMaterialClass: GlassMaterial,
-      width: 64,
-      borderRadius: 32,
-      borderWidth: 4,
-      borderBend: 0.5,
-      height: 64,
-      backgroundColor: "#aaa",
-      opacity: cancelOpacity,
-      transformTranslateY: promptTranslateY,
-    });
-    buttonContainer.add(cancelContainer);
+    promptContainer.add(actionBarContainer);
     const inputContainer = new Container({
       panelMaterialClass: GlassMaterial,
       width: "100%",
@@ -879,8 +931,7 @@ function UserInterface({
       transformTranslateY: promptTranslateY,
     });
     const unsubscribeInput = syncToElement(inputContainer, input);
-    const unsubscribeCancel = syncToElement(cancelContainer, cancel);
-    const unsubscribeNew = syncToElement(newContainer, newBtn);
+    const unsubscribeActionBar = syncToElement(actionBarContainer, actionBar);
     const unsubscribeDrawerButton = syncToElement(
       drawerButtonContainer,
       drawerButton
@@ -892,10 +943,9 @@ function UserInterface({
     return () => {
       camera.remove(fullscreen);
       unsubscribeInput();
-      unsubscribeCancel();
+      unsubscribeActionBar();
       unsubscribeDrawerButton();
       unsubscribeDrawer();
-      unsubscribeNew();
     };
   }, [renderer, camera, promptTranslateY]);
   return <primitive object={camera} />;

@@ -1,7 +1,7 @@
-import { TRPC } from "../index.js";
+import { server, TRPC } from "../index.js";
 import { db } from "../db/index.js";
 import { deleteUikitJob, subscribeUikitJobStatus } from "./uikit.js";
-import { int, object, string } from "zod/v4";
+import { int, object, string, enum as enum_ } from "zod/v4";
 import { createProtectedProcedure } from "../lib/protected-procedure.js";
 
 export function buildJobsRouter(trpc: TRPC, abortSignal: AbortSignal) {
@@ -85,6 +85,35 @@ export function buildJobsRouter(trpc: TRPC, abortSignal: AbortSignal) {
           return;
         }
         throw new Error(`unknown job type`);
+      }),
+    feedback: protectedProcedure
+      .input(object({ id: string() }))
+      .query(async ({ ctx, input }) => {
+        const job = await db.job.findFirstOrThrow({
+          where: { id: input.id, userId: ctx.user.id },
+          select: {
+            feedbackType: true,
+            feedbackText: true,
+          },
+        });
+        return {
+          type: job.feedbackType,
+          text: job.feedbackText,
+        };
+      }),
+    setFeedback: protectedProcedure
+      .input(
+        object({
+          id: string(),
+          type: enum_(["Positive", "Negative"]),
+          text: string().optional(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        await db.job.update({
+          where: { id: input.id, userId: ctx.user.id },
+          data: { feedbackText: input.text, feedbackType: input.type },
+        });
       }),
   });
 }

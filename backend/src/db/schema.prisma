@@ -12,6 +12,11 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
+enum FeedbackType {
+    Positive
+    Negative
+}
+
 model Job {
     id     String  @id @default(cuid())
     userId String?
@@ -19,6 +24,9 @@ model Job {
 
     uikitJobId String?   @unique
     uikitJob   UikitJob? @relation(fields: [uikitJobId], references: [id])
+
+    feedbackType FeedbackType?
+    feedbackText String?
 
     deletedAt DateTime?
 
