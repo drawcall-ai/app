@@ -6,6 +6,7 @@
     "@pmndrs/uikit": "^1.0.23",
     "@pmndrs/uikitml": "^0.0.10",
     "@pmndrs/vanilla": "^1.21.0",
+    "@react-three/xr": "^6.6.19",
     "@polar-sh/better-auth": "^1.0.4",
     "@preact/signals": "^2.2.1",
     "@radix-ui/react-select": "^2.2.5",

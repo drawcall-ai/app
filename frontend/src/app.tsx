@@ -29,6 +29,7 @@ import { AuthDialog } from "./components/AuthDialog";
 import { UserProfile } from "./components/UserProfile";
 import { PromptDropdowns } from "./components/PromptDropdowns";
 import { authClient, useSession } from "./auth-client";
+import { PointerEvents, noEvents } from "@react-three/xr";
 
 interface IconButtonProps {
   onClick?: () => void;
@@ -320,11 +321,13 @@ function MainApp() {
         onCreated={(state) => {
           state.gl.setTransparentSort(reversePainterSortStable);
         }}
+        events={noEvents}
         onClick={() => setDrawerOpen(false)}
         camera={{ position: [10, 10, 10] }}
         gl={{ localClippingEnabled: true }}
         className="absolute! inset-0 bg-[#333]"
       >
+        <PointerEvents />
         <color args={["#333"]} attach="background" />
         <Camera />
         <Grid
