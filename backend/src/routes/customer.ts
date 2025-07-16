@@ -13,7 +13,8 @@ export function buildCustomerRouter(trpc: TRPC, abortSignal: AbortSignal) {
       );
       return {
         hasAppBenefit,
-        requestQuota: await getJobRequestQuota(ctx.user.id, hasAppBenefit),
+        requestQuota: (await getJobRequestQuota(ctx.user.id, hasAppBenefit))
+          .remaining,
       };
     }),
   });

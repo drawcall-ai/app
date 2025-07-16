@@ -152,11 +152,11 @@ export function buildUikitRouter(trpc: TRPC, abortSignal: AbortSignal) {
           ctx.user.id,
           ctx.user.isAnonymous!
         );
-        const quota = await getJobRequestQuota(ctx.user.id, hasAppBenefit);
-        if (quota === 0) {
+        const { remaining, monthly } = await getJobRequestQuota(ctx.user.id, hasAppBenefit);
+        if (remaining === 0) {
           throw new TRPCError({
             code: "FORBIDDEN",
-            message: `exceeding job quota of 50`,
+            message: `exceeding job quota of ${monthly}`,
           });
         }
         const { id: uikitJobId } = await db.uikitJob.create({

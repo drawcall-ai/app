@@ -6,7 +6,7 @@ export async function getJobRequestQuota(
   userId: string,
   hasPolarAppBenefit: boolean
 ) {
-  const monthlyRequestQuota = hasPolarAppBenefit ? 50 : 1;
+  const monthlyRequestQuota = hasPolarAppBenefit ? 200 : 5;
 
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -20,7 +20,10 @@ export async function getJobRequestQuota(
       },
     },
   });
-  return Math.max(0, monthlyRequestQuota - jobRequests);
+  return {
+    remaining: Math.max(0, monthlyRequestQuota - jobRequests),
+    monthly: monthlyRequestQuota,
+  };
 }
 
 function buildHasPolarAppBenefitRedisKey(userId: string) {
